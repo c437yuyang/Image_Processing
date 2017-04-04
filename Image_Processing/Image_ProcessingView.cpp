@@ -182,7 +182,8 @@ BEGIN_MESSAGE_MAP(CImage_ProcessingView, CScrollView)
 	ON_COMMAND(ID_MORPH_BORDER_EXTRACT, &CImage_ProcessingView::OnMorphBorderExtract)
 	ON_COMMAND(ID_FILTER_MEDIUM_AUTOADAPTIVE, &CImage_ProcessingView::OnFilterMediumAutoadaptive)
 	ON_WM_HSCROLL()
-	ON_COMMAND(ID_Menu32973, &CImage_ProcessingView::OnEncodeHuffman)
+	ON_COMMAND(ID_ENCODE_HUFFMAN, &CImage_ProcessingView::OnEncodeHuffman)
+	ON_COMMAND(ID_ENCODE_SHANNON, &CImage_ProcessingView::OnEncodeShannon)
 END_MESSAGE_MAP()
 
 // CImage_ProcessingView 构造/析构
@@ -864,9 +865,19 @@ void CImage_ProcessingView::OnTest()
 	////m_bIsProcessed = TRUE;
 	//Invalidate();
 
+	vector<char> code;
+	code = m_com.DecimalDec2Bin(0.95333099365234375,6);
+	code = m_com.DecimalDec2Bin(0.96465301513671875, 6);
 
-	m_com.DecimalDec2Bin(0.4,4);
 
+
+	double a[] = { 0.2,0.1,0.5,0.8,0.05 };
+	int p[] = { 0,1,2,3,4 };
+	m_com.sortindex(a, p, 5);
+
+	cout << log2(0.00033950805664062500) << endl;
+	cout << log(0.00033950805664062500) / log(2) << endl;
+	cout << floor(1.0) << endl;
 }
 
 
@@ -5930,10 +5941,10 @@ void CImage_ProcessingView::Ontest1()
 	//}
 
 	//cout << b << endl;
-	m_Image.CopyTo(m_ImageAfter);
+	//m_Image.CopyTo(m_ImageAfter);
 
-	doToGray(m_ImageAfter, m_ImageAfter);
-	UpdateState();
+	//doToGray(m_ImageAfter, m_ImageAfter);
+	//UpdateState();
 
 }
 
@@ -7537,11 +7548,11 @@ void CImage_ProcessingView::OnEncodeHuffman()
 
 }
 
-int getMapMinIndex(map<int,int> &imap)
+int getMapMinIndex(map<int, int> &imap)
 {
 	int minIndex = 0;
 	int minValue = imap[0];
-	for (int i=0;i!=imap.size();++i)
+	for (int i = 0; i != imap.size(); ++i)
 	{
 		if (imap[i] <= minValue)
 		{
@@ -7767,5 +7778,125 @@ const int MaxN = 256;
 ////	}
 ////	return 0;
 ////}
+
+
+
+
+void CImage_ProcessingView::OnEncodeShannon()
+{
+	// TODO: 在此添加命令处理程序代码
+
+	if (m_Image.IsNull())
+		return;
+
+	if (m_ImageAfter.IsNull())
+		m_Image.CopyTo(m_ImageAfter);
+
+	doToGray(m_ImageAfter, m_ImageAfter);
+
+	double hist[256] = { 0.0 }, hist_add[256] = { 0.0 }, hist_sort[256] = { 0.0 };
+	for (int i = 0; i != m_ImageAfter.GetHeight(); ++i)
+	{
+		for (int j = 0; j != m_ImageAfter.GetWidth(); ++j)
+		{
+			++hist[m_ImageAfter.m_pBits[0][i][j]];
+		}
+	}
+
+	for (int i = 0; i != 256; ++i)
+		hist[i] /= (m_ImageAfter.GetHeight()*m_ImageAfter.GetWidth());
+
+	int index[256]; //得到索引数组
+	for (int i = 0; i != 256; ++i)
+		index[i] = i;
+	
+	memcpy(hist_sort, hist, sizeof(hist));
+	m_com.sortindex(hist_sort,index,256);
+
+	//计算累计概率
+	hist_add[1] = hist_sort[0];
+	for (int i = 2; i != 256; ++i)
+		hist_add[i] += hist_add[i - 1] + hist_sort[i - 1];
+
+	int nCodeDigits[256];
+	//计算Li(编码位数)
+	for (int i = 0; i != 256; ++i)
+	{
+		int temp = (int)ceil(-log2(hist_sort[i]));
+		nCodeDigits[i] = temp < 0 ? 0 : temp;
+	}
+
+	//计算码表
+	vector<vector<char>> dict;
+	for (int i = 0; i != 256; ++i)
+	{
+		vector<char> code;
+		if (nCodeDigits[i]!=0)
+		{
+			code = m_com.DecimalDec2Bin(hist_add[i], nCodeDigits[i]);
+		}
+		dict.push_back(code); //若不需要编码的则推入0size的
+	}
+
+
+	//对图像进行编码
+	vector<vector<char>> codes;
+	int curIndex,temp;
+	for (int i=0;i!=m_ImageAfter.GetHeight();++i)
+	{
+		for (int j=0;j!=m_ImageAfter.GetWidth();++j)
+		{
+			//通过现在的灰度级,找到对应码表的位置
+			temp = m_ImageAfter.m_pBits[0][i][j];
+			for (int k=0;k!=256;++k)
+			{
+				if (temp == index[k])
+				{
+					curIndex = k;
+					break;
+				}
+			}
+			codes.push_back(dict[curIndex]);
+		}
+	}
+	
+	//对图像进行解码
+
+	//先创建空白图像
+	MyImage_ imgDecode(m_ImageAfter.GetWidth(),m_ImageAfter.GetHeight());
+
+	//开始解码
+	int idx = 0,decodeValue=-1;
+	for (int i=0;i!=m_ImageAfter.GetHeight();++i)
+	{
+		for (int j=0;j!=m_ImageAfter.GetHeight();++j)
+		{
+			idx = i*m_ImageAfter.GetWidth() + j;
+			decodeValue = -1; //首先让当前像素的解码值为-1表示还未找到
+			//搜索码表找到编码对应原灰度值
+			for (int k=0;k!=256 /*&& decodeValue==-1*/;++k)
+			{
+				if (dict[k].size()==codes[idx].size() && decodeValue==-1) //首先要求长度一致
+				{
+					for (int it=0;it!= dict[k].size();++it) //然后对比每一位是否一致
+					{
+						if (dict[k][it] != codes[idx][it])
+							break;
+						decodeValue = k;
+					}
+				}
+			}
+			imgDecode.m_pBits[0][i][j] = index[decodeValue]; //最终再回到索引数组里找到真正的原始灰度值
+			imgDecode.m_pBits[1][i][j] = index[decodeValue]; //最终再回到索引数组里找到真正的原始灰度值
+			imgDecode.m_pBits[2][i][j] = index[decodeValue]; //最终再回到索引数组里找到真正的原始灰度值
+		}
+	}
+	imgDecode.CopyTo(m_ImageToDlgShow);
+	CDlgShowImg *pDlg = new CDlgShowImg;
+	pDlg->Create(IDD_DLG_SHOW_IMG, this);
+	pDlg->ShowWindow(SW_SHOW);
+
+
+}
 
 

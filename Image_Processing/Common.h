@@ -66,4 +66,5 @@ public:
 	int TextSegment(const CString &strInput,const CString &strSeg,vector<CString> &vecOutput);
 	double* CCommon::getGussianKernalData(int n, double sigma);
 	vector<char> DecimalDec2Bin(double num, int digit=3);
+	void sortindex(double a[], int p[], int n); //排序数组a并在数组b中得到排序后的数在原数组的下标
 };
