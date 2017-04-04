@@ -1,0 +1,12 @@
+对MyImage_类的修改：
+1.修改析构函数里内存释放(原未释放完，导致内存泄漏)
+2.新增Create方法
+3.新增CopyTo方法
+4.新增BorderFillTo方法
+5.新增RemoveFillTo方法
+6.修改Destroy方法
+7.修改IsNull方法
+8.增加m_bIsGrayed变量及其方法
+9.增加MyImage构造函数，拷贝构造函数
+10.改写赋值符号
+11.删除GetImage方法
