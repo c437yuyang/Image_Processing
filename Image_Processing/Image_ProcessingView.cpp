@@ -3794,7 +3794,7 @@ void CImage_ProcessingView::OnFilterHpfSet()
 
 void CImage_ProcessingView::ShowImgInDlg(CString strWindowName)
 {
-	CDlgShowImg *pDlg = new CDlgShowImg;
+	CDlgShowImg *pDlg = new CDlgShowImg(strWindowName);
 	pDlg->Create(IDD_DLG_SHOW_IMG, this);
 	pDlg->SetWindowTextW(strWindowName);
 	pDlg->ShowWindow(SW_SHOW);
@@ -7785,6 +7785,8 @@ const int MaxN = 256;
 void CImage_ProcessingView::OnEncodeShannon()
 {
 	// TODO: 在此添加命令处理程序代码
+	long double ldTimeStart, ldTimeEnd;
+	ldTimeStart = GetTickCount();
 
 	if (m_Image.IsNull())
 		return;
@@ -7792,7 +7794,7 @@ void CImage_ProcessingView::OnEncodeShannon()
 	if (m_ImageAfter.IsNull())
 		m_Image.CopyTo(m_ImageAfter);
 
-	doToGray(m_ImageAfter, m_ImageAfter);
+	OnTogray();
 
 	double hist[256] = { 0.0 }, hist_add[256] = { 0.0 }, hist_sort[256] = { 0.0 };
 	for (int i = 0; i != m_ImageAfter.GetHeight(); ++i)
@@ -7860,13 +7862,29 @@ void CImage_ProcessingView::OnEncodeShannon()
 		}
 	}
 	
-	//对图像进行解码
+	//计算平均码长,信源熵,编码效率
+	double HX = 0.0, L = 0.0;
+	for (int i=0;i!=256;++i)
+	{
+		if (hist[i]!=0)
+			HX += (hist[i] * -log2(hist[i]));
+		if (hist_sort[i]!=0)
+		{
+			L += hist_sort[i] * nCodeDigits[i];
+		}
+	}
+	cout << "信源熵为:" << HX << endl;
+	cout << "平均码长为:" << L << endl;
+	cout << "编码效率:" << HX / L << endl;
 
+
+	//对图像进行解码
 	//先创建空白图像
 	MyImage_ imgDecode(m_ImageAfter.GetWidth(),m_ImageAfter.GetHeight());
 
 	//开始解码
 	int idx = 0,decodeValue=-1;
+	int match_digits = 0;
 	for (int i=0;i!=m_ImageAfter.GetHeight();++i)
 	{
 		for (int j=0;j!=m_ImageAfter.GetHeight();++j)
@@ -7874,16 +7892,20 @@ void CImage_ProcessingView::OnEncodeShannon()
 			idx = i*m_ImageAfter.GetWidth() + j;
 			decodeValue = -1; //首先让当前像素的解码值为-1表示还未找到
 			//搜索码表找到编码对应原灰度值
-			for (int k=0;k!=256 /*&& decodeValue==-1*/;++k)
+			for (int k=0;k!=256 && decodeValue==-1;++k)
 			{
+				match_digits = 0;
 				if (dict[k].size()==codes[idx].size() && decodeValue==-1) //首先要求长度一致
 				{
 					for (int it=0;it!= dict[k].size();++it) //然后对比每一位是否一致
 					{
 						if (dict[k][it] != codes[idx][it])
 							break;
-						decodeValue = k;
+						else
+							++match_digits;
 					}
+					if(match_digits== dict[k].size())
+						decodeValue = k;
 				}
 			}
 			imgDecode.m_pBits[0][i][j] = index[decodeValue]; //最终再回到索引数组里找到真正的原始灰度值
@@ -7891,13 +7913,15 @@ void CImage_ProcessingView::OnEncodeShannon()
 			imgDecode.m_pBits[2][i][j] = index[decodeValue]; 
 		}
 	}
-	imgDecode.Save(L"decoded.bmp");
+
+	imgDecode.Save(L"decoded.bmp"); //保存一张方便对比
 	imgDecode.CopyTo(m_ImageToDlgShow);
-	CDlgShowImg *pDlg = new CDlgShowImg;
+	CDlgShowImg *pDlg = new CDlgShowImg(_T("香农编码解码结果"));
 	pDlg->Create(IDD_DLG_SHOW_IMG, this);
 	pDlg->ShowWindow(SW_SHOW);
 
-
+	ldTimeEnd = GetTickCount();
+	std::cout << "香农编码、解码完成，" << "耗时：" << (ldTimeEnd - ldTimeStart) / 1000 << "s" << endl;
 }
 
 

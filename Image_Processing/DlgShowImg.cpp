@@ -13,11 +13,13 @@ using namespace std;
 
 IMPLEMENT_DYNAMIC(CDlgShowImg, CDialogEx)
 
-CDlgShowImg::CDlgShowImg(CWnd* pParent /*=NULL*/)
+CDlgShowImg::CDlgShowImg(CString WndName,CWnd* pParent /*=NULL*/)
 	: CDialogEx(CDlgShowImg::IDD, pParent)
 {
 	CImage_ProcessingView *m_pView= (CImage_ProcessingView*)((CMainFrame*)AfxGetMainWnd())->GetActiveView();
 	m_pView->m_ImageToDlgShow.CopyTo(m_ImageToShow);
+	m_strWndName = WndName;
+
 }
 
 CDlgShowImg::~CDlgShowImg()
@@ -70,4 +72,15 @@ void CDlgShowImg::PostNcDestroy()
 	// TODO: Add your specialized code here and/or call the base class
 	delete this;
 	CDialogEx::PostNcDestroy();
+}
+
+
+BOOL CDlgShowImg::OnInitDialog()
+{
+	CDialogEx::OnInitDialog();
+
+	// TODO:  在此添加额外的初始化
+	this->SetWindowTextW(m_strWndName);
+	return TRUE;  // return TRUE unless you set the focus to a control
+				  // 异常: OCX 属性页应返回 FALSE
 }

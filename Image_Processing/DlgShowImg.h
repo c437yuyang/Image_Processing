@@ -9,7 +9,7 @@ class CDlgShowImg : public CDialogEx
 	DECLARE_DYNAMIC(CDlgShowImg)
 
 public:
-	CDlgShowImg(CWnd* pParent = NULL);   // standard constructor
+	CDlgShowImg(CString WndName,CWnd* pParent = NULL);   // standard constructor
 	virtual ~CDlgShowImg();
 
 // Dialog Data
@@ -23,7 +23,9 @@ public:
 	afx_msg void OnPaint();
 private:
 	MyImage_ m_ImageToShow;
+	CString m_strWndName;
 public:
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	virtual void PostNcDestroy();
+	virtual BOOL OnInitDialog();
 };
