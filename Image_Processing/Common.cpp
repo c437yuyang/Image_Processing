@@ -1354,4 +1354,34 @@ double* CCommon::getGussianKernalData(int n, double sigma) {
 	}
 
 	return kernalData;  
-}  
+}
+
+vector<char> CCommon::DecimalDec2Bin(double num, int digit)
+{
+	vector<char> code;
+	if (digit<1)
+	{
+		return code;
+	}
+	int getDigit = 0;
+	while (getDigit<digit)
+	{
+		num *= 2;
+		if (num>=1.0)
+		{
+			num -= 1.0;
+			code.push_back(1);
+			if (num<eps && num > -eps)
+			{
+				break;
+			}
+		}
+		else
+		{
+			code.push_back(0);
+		}
+		getDigit += 1;
+	}
+	return code;
+
+}

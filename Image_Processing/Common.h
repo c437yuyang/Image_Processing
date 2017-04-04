@@ -65,4 +65,5 @@ public:
 
 	int TextSegment(const CString &strInput,const CString &strSeg,vector<CString> &vecOutput);
 	double* CCommon::getGussianKernalData(int n, double sigma);
+	vector<char> DecimalDec2Bin(double num, int digit=3);
 };
