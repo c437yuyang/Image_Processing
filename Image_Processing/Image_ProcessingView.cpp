@@ -7887,7 +7887,7 @@ void CImage_ProcessingView::OnEncodeShannon()
 				}
 			}
 			imgDecode.m_pBits[0][i][j] = index[decodeValue]; //最终再回到索引数组里找到真正的原始灰度值
-			imgDecode.m_pBits[1][i][j] = index[decodeValue]; 
+			imgDecode.m_pBits[1][i][j] = index[decodeValue]; //
 			imgDecode.m_pBits[2][i][j] = index[decodeValue]; 
 		}
 	}
