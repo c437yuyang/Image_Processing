@@ -132,7 +132,7 @@
       <Optimization>Disabled</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -199,6 +199,7 @@
     <ClInclude Include="DlgShowImg.h" />
     <ClInclude Include="DlgThresh.h" />
     <ClInclude Include="HoughTransformer.h" />
+    <ClInclude Include="Huffman.h" />
     <ClInclude Include="ImagesStock.h" />
     <ClInclude Include="Image_Processing.h" />
     <ClInclude Include="Image_ProcessingDoc.h" />
@@ -230,6 +231,7 @@
     <ClCompile Include="DlgShowImg.cpp" />
     <ClCompile Include="DlgThresh.cpp" />
     <ClCompile Include="HoughTransformer.cpp" />
+    <ClCompile Include="Huffman.cpp" />
     <ClCompile Include="ImagesStock.cpp" />
     <ClCompile Include="Image_Processing.cpp" />
     <ClCompile Include="Image_ProcessingDoc.cpp" />

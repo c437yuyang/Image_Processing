@@ -23,6 +23,7 @@
 #include "ImagesStock.h"
 #include "MotionFilter.h"
 #include "HoughTransformer.h"
+#include "Huffman.h"
 
 #include <cmath>
 #include <map>

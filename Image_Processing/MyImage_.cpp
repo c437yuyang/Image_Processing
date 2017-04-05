@@ -67,6 +67,10 @@ MyImage_::~MyImage_(void)
 
 HRESULT MyImage_::Load(_In_z_ LPCTSTR pszFileName) 
 {
+	if (!IsNull())
+	{
+		Destroy();
+	}
 	m_CImage.Load(pszFileName);
 	if(m_CImage.IsNull()) return 0;
 	int w=m_CImage.GetWidth();

@@ -123,6 +123,9 @@
     <ClInclude Include="HoughTransformer.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Huffman.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Image_Processing.cpp">
@@ -204,6 +207,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="HoughTransformer.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Huffman.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
