@@ -184,7 +184,8 @@ BEGIN_MESSAGE_MAP(CImage_ProcessingView, CScrollView)
 	ON_WM_HSCROLL()
 	ON_COMMAND(ID_ENCODE_HUFFMAN, &CImage_ProcessingView::OnEncodeHuffman)
 	ON_COMMAND(ID_ENCODE_SHANNON, &CImage_ProcessingView::OnEncodeShannon)
-END_MESSAGE_MAP()
+		ON_COMMAND(ID_ENCODE_BIT_PLANE, &CImage_ProcessingView::OnEncodeBitPlane)
+		END_MESSAGE_MAP()
 
 // CImage_ProcessingView 构造/析构
 
@@ -715,6 +716,7 @@ void CImage_ProcessingView::doToGray(const MyImage_ &srcImg, MyImage_ &dstImg) /
 	if (dstImg.IsNull())
 		srcImg.CopyTo(dstImg);
 
+	//如果已经是灰度化过的了，则直接拷贝到dstImg
 	if (srcImg.IsGrayed() == true)
 	{
 		srcImg.CopyTo(dstImg);
@@ -722,17 +724,20 @@ void CImage_ProcessingView::doToGray(const MyImage_ &srcImg, MyImage_ &dstImg) /
 		return;
 	}
 
-	UINT average = 0;
-	for (UINT j = 0; j < m_nHeight; j++)
+	MyImage_ imgTmp(srcImg);
+
+	int average = 0;
+	for (int j = 0; j < srcImg.GetHeight(); j++)
 	{
-		for (UINT k = 0; k < m_nWidth; k++)
+		for (int k = 0; k < srcImg.GetWidth(); k++)
 		{
 			average = (srcImg.m_pBits[0][j][k] + srcImg.m_pBits[1][j][k] + srcImg.m_pBits[2][j][k]) / 3;
-			dstImg.m_pBits[0][j][k] = average;//B   用循环访问图像的像素值
-			dstImg.m_pBits[1][j][k] = average;//G
-			dstImg.m_pBits[2][j][k] = average;//R
+			imgTmp.m_pBits[0][j][k] = average;//B   用循环访问图像的像素值
+			imgTmp.m_pBits[1][j][k] = average;//G
+			imgTmp.m_pBits[2][j][k] = average;//R
 		}
 	}
+	imgTmp.CopyTo(dstImg);
 
 }
 
@@ -7626,3 +7631,11 @@ void CImage_ProcessingView::OnEncodeShannon()
 }
 
 
+
+
+void CImage_ProcessingView::OnEncodeBitPlane()
+{
+	// TODO: 在此添加命令处理程序代码
+
+
+}

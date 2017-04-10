@@ -323,6 +323,7 @@ public:
 	afx_msg void OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
 	afx_msg void OnEncodeHuffman();
 	afx_msg void OnEncodeShannon();
+	afx_msg void OnEncodeBitPlane();
 };
 
 #ifndef _DEBUG  // Image_ProcessingView.cpp 中的调试版本
