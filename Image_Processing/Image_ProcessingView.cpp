@@ -184,8 +184,8 @@ BEGIN_MESSAGE_MAP(CImage_ProcessingView, CScrollView)
 	ON_WM_HSCROLL()
 	ON_COMMAND(ID_ENCODE_HUFFMAN, &CImage_ProcessingView::OnEncodeHuffman)
 	ON_COMMAND(ID_ENCODE_SHANNON, &CImage_ProcessingView::OnEncodeShannon)
-		ON_COMMAND(ID_ENCODE_BIT_PLANE, &CImage_ProcessingView::OnEncodeBitPlane)
-		END_MESSAGE_MAP()
+	ON_COMMAND(ID_ENCODE_BIT_PLANE, &CImage_ProcessingView::OnEncodeBitPlane)
+END_MESSAGE_MAP()
 
 // CImage_ProcessingView 构造/析构
 
@@ -738,7 +738,7 @@ void CImage_ProcessingView::doToGray(const MyImage_ &srcImg, MyImage_ &dstImg) /
 		}
 	}
 	imgTmp.CopyTo(dstImg);
-
+	dstImg.SetGrayed(true);
 }
 
 
@@ -871,7 +871,7 @@ void CImage_ProcessingView::OnTest()
 	//Invalidate();
 
 	vector<char> code;
-	code = m_com.DecimalDec2Bin(0.95333099365234375,6);
+	code = m_com.DecimalDec2Bin(0.95333099365234375, 6);
 	code = m_com.DecimalDec2Bin(0.96465301513671875, 6);
 
 
@@ -7471,10 +7471,10 @@ void CImage_ProcessingView::OnEncodeHuffman()
 
 	m_ImageAfter.Save(L"huffman_bgr.bmp");
 	system("convertToGray huffman_bgr.bmp huffman_gray.bmp");
-	Sleep(100);	
-	m_ImageAfter.Load(L"huffman_gray.bmp");	
+	Sleep(100);
+	m_ImageAfter.Load(L"huffman_gray.bmp");
 	CHuffman huffman;
-	huffman.DoHuffmanCode(m_ImageAfter,m_ImageToDlgShow);
+	huffman.DoHuffmanCode(m_ImageAfter, m_ImageToDlgShow);
 	CDlgShowImg *pDlg = new CDlgShowImg(_T("霍夫曼编码解码结果"));
 	pDlg->Create(IDD_DLG_SHOW_IMG, this);
 	pDlg->ShowWindow(SW_SHOW);
@@ -7517,9 +7517,9 @@ void CImage_ProcessingView::OnEncodeShannon()
 	int index[256]; //得到索引数组
 	for (int i = 0; i != 256; ++i)
 		index[i] = i;
-	
+
 	memcpy(hist_sort, hist, sizeof(hist));
-	m_com.sortindex(hist_sort,index,256);
+	m_com.sortindex(hist_sort, index, 256);
 
 	//计算累计概率
 	hist_add[1] = hist_sort[0];
@@ -7539,7 +7539,7 @@ void CImage_ProcessingView::OnEncodeShannon()
 	for (int i = 0; i != 256; ++i)
 	{
 		vector<char> code;
-		if (nCodeDigits[i]!=0)
+		if (nCodeDigits[i] != 0)
 		{
 			code = m_com.DecimalDec2Bin(hist_add[i], nCodeDigits[i]);
 		}
@@ -7549,14 +7549,14 @@ void CImage_ProcessingView::OnEncodeShannon()
 
 	//对图像进行编码
 	vector<vector<char>> codes;
-	int curIndex,temp;
-	for (int i=0;i!=m_ImageAfter.GetHeight();++i)
+	int curIndex, temp;
+	for (int i = 0; i != m_ImageAfter.GetHeight(); ++i)
 	{
-		for (int j=0;j!=m_ImageAfter.GetWidth();++j)
+		for (int j = 0; j != m_ImageAfter.GetWidth(); ++j)
 		{
 			//通过现在的灰度级,找到对应码表的位置
 			temp = m_ImageAfter.m_pBits[0][i][j];
-			for (int k=0;k!=256;++k)
+			for (int k = 0; k != 256; ++k)
 			{
 				if (temp == index[k])
 				{
@@ -7567,14 +7567,14 @@ void CImage_ProcessingView::OnEncodeShannon()
 			codes.push_back(dict[curIndex]);
 		}
 	}
-	
+
 	//计算平均码长,信源熵,编码效率
 	double HX = 0.0, L = 0.0;
-	for (int i=0;i!=256;++i)
+	for (int i = 0; i != 256; ++i)
 	{
-		if (hist[i]!=0)
+		if (hist[i] != 0)
 			HX += (hist[i] * -log2(hist[i]));
-		if (hist_sort[i]!=0)
+		if (hist_sort[i] != 0)
 		{
 			L += hist_sort[i] * nCodeDigits[i];
 		}
@@ -7586,37 +7586,37 @@ void CImage_ProcessingView::OnEncodeShannon()
 
 	//对图像进行解码
 	//先创建空白图像
-	MyImage_ imgDecode(m_ImageAfter.GetWidth(),m_ImageAfter.GetHeight());
+	MyImage_ imgDecode(m_ImageAfter.GetWidth(), m_ImageAfter.GetHeight());
 
 	//开始解码
-	int idx = 0,decodeValue=-1;
+	int idx = 0, decodeValue = -1;
 	int match_digits = 0;
-	for (int i=0;i!=m_ImageAfter.GetHeight();++i)
+	for (int i = 0; i != m_ImageAfter.GetHeight(); ++i)
 	{
-		for (int j=0;j!=m_ImageAfter.GetHeight();++j)
+		for (int j = 0; j != m_ImageAfter.GetHeight(); ++j)
 		{
 			idx = i*m_ImageAfter.GetWidth() + j;
 			decodeValue = -1; //首先让当前像素的解码值为-1表示还未找到
 			//搜索码表找到编码对应原灰度值
-			for (int k=0;k!=256 && decodeValue==-1;++k)
+			for (int k = 0; k != 256 && decodeValue == -1; ++k)
 			{
 				match_digits = 0;
-				if (dict[k].size()==codes[idx].size() && decodeValue==-1) //首先要求长度一致
+				if (dict[k].size() == codes[idx].size() && decodeValue == -1) //首先要求长度一致
 				{
-					for (int it=0;it!= dict[k].size();++it) //然后对比每一位是否一致
+					for (int it = 0; it != dict[k].size(); ++it) //然后对比每一位是否一致
 					{
 						if (dict[k][it] != codes[idx][it])
 							break;
 						else
 							++match_digits;
 					}
-					if(match_digits== dict[k].size())
+					if (match_digits == dict[k].size())
 						decodeValue = k;
 				}
 			}
 			imgDecode.m_pBits[0][i][j] = index[decodeValue]; //最终再回到索引数组里找到真正的原始灰度值
 			imgDecode.m_pBits[1][i][j] = index[decodeValue]; //
-			imgDecode.m_pBits[2][i][j] = index[decodeValue]; 
+			imgDecode.m_pBits[2][i][j] = index[decodeValue];
 		}
 	}
 
@@ -7636,6 +7636,48 @@ void CImage_ProcessingView::OnEncodeShannon()
 void CImage_ProcessingView::OnEncodeBitPlane()
 {
 	// TODO: 在此添加命令处理程序代码
+	if (m_Image.IsNull())
+		return;
 
+	if (m_ImageAfter.IsNull())
+		m_Image.CopyTo(m_ImageAfter);
+
+	OnTogray();
+
+	int bits[8] = { 1,2,4,8,16,32,64,128 };
+
+	//int **planes = new int *[8];
+	//for (int i = 0; i != 8; ++i)
+	//{
+	//	*planes = new int[m_nWidth*m_nHeight];
+	//}
+
+	MyImage_ planes[8];
+	for (int i=0;i!=8;++i)
+		planes[i].Create(m_nWidth, m_nHeight,0);
+
+	for (int k = 0; k != 8; ++k)
+		for (int i = 0; i != m_nHeight; ++i)
+		{
+			for (int j = 0; j != m_nWidth; ++j)
+			{
+				planes[k].m_pBits[0][i][j] = (m_ImageAfter.m_pBits[0][i][j] & bits[k]) > 0 ? 255 : 0;
+				planes[k].m_pBits[1][i][j] = (m_ImageAfter.m_pBits[0][i][j] & bits[k]) > 0 ? 255 : 0;
+				planes[k].m_pBits[2][i][j] = (m_ImageAfter.m_pBits[0][i][j] & bits[k]) > 0 ? 255 : 0;
+			}
+		}
+
+
+	CString wndName;
+	for (int i = 0; i != 8; ++i)
+	{
+		planes[i].CopyTo(m_ImageToDlgShow);
+		wndName.Format(_T("第%d比特面"),i + 1);
+		CDlgShowImg *pDlg = new CDlgShowImg(wndName);
+		pDlg->Create(IDD_DLG_SHOW_IMG, this);
+		pDlg->ShowWindow(SW_SHOW);
+	}
+
+	
 
 }
