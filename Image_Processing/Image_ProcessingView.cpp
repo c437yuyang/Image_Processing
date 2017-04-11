@@ -7621,7 +7621,7 @@ void CImage_ProcessingView::OnEncodeShannon()
 		}
 	}
 
-	imgDecode.Save(L"decoded.bmp"); //保存一张方便对比
+	imgDecode.Save(L"decoded_shannon.bmp"); //保存一张方便对比
 	imgDecode.CopyTo(m_ImageToDlgShow);
 	CDlgShowImg *pDlg = new CDlgShowImg(_T("香农编码解码结果"));
 	pDlg->Create(IDD_DLG_SHOW_IMG, this);
@@ -7696,10 +7696,11 @@ void CImage_ProcessingView::OnEncodeHuffman2()
 
 	CMyHuffman huffman;
 	m_ImageToDlgShow.Create(m_nWidth, m_nHeight, 0);
-	MyImage_ imgTemp(m_nWidth,m_nHeight,0); //创建为纯色图为了验证结果
 	huffman.DoHuffmanCode(m_ImageAfter, m_ImageToDlgShow);
-	CDlgShowImg *pDlg = new CDlgShowImg(_T("香农编码解码结果"));
+	m_ImageToDlgShow.Save(L"decoded_huffman.bmp"); //保存一张方便对比
+	CDlgShowImg *pDlg = new CDlgShowImg(_T("霍夫曼编码解码结果"));
 	pDlg->Create(IDD_DLG_SHOW_IMG, this);
 	pDlg->ShowWindow(SW_SHOW);
+	//UpdateState(); //ontoGray里面已经updatestate了
 
 }
