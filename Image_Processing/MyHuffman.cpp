@@ -15,7 +15,7 @@ void CMyHuffman::DoHuffmanCode(const MyImage_ & srcImg, MyImage_ & dstImg)
 {
 	m_nHeight = srcImg.GetHeight();
 	m_nWidth = srcImg.GetWidth();
-	pBmpBuf = new unsigned char[m_nWidth * m_nHeight];
+	m_pImgTemp = new unsigned char[m_nWidth * m_nHeight];
 
 	//初始化hist和huffman树
 	HuffmanCodeInit();
@@ -24,8 +24,8 @@ void CMyHuffman::DoHuffmanCode(const MyImage_ & srcImg, MyImage_ & dstImg)
 	for (int i=0;i!=srcImg.GetHeight();++i)
 		for (int j = 0; j != srcImg.GetWidth(); ++j)
 		{
-			pBmpBuf[i*srcImg.GetWidth() + j] = srcImg.m_pBits[0][i][j];
-			hist[srcImg.m_pBits[0][i][j]] += 1;
+			m_pImgTemp[i*srcImg.GetWidth() + j] = srcImg.m_pBits[0][i][j];
+			m_nHist[srcImg.m_pBits[0][i][j]] += 1;
 		}
 
 	HuffmanCode(); //进行编码  结果存在imgInf里面
@@ -36,13 +36,13 @@ void CMyHuffman::DoHuffmanCode(const MyImage_ & srcImg, MyImage_ & dstImg)
 	{
 		for (int j = 0; j != srcImg.GetWidth(); ++j)
 		{
-			dstImg.m_pBits[0][i][j] = pBmpBuf[i*srcImg.GetWidth() + j];
-			dstImg.m_pBits[1][i][j] = pBmpBuf[i*srcImg.GetWidth() + j];
-			dstImg.m_pBits[2][i][j] = pBmpBuf[i*srcImg.GetWidth() + j];
+			dstImg.m_pBits[0][i][j] = m_pImgTemp[i*srcImg.GetWidth() + j];
+			dstImg.m_pBits[1][i][j] = m_pImgTemp[i*srcImg.GetWidth() + j];
+			dstImg.m_pBits[2][i][j] = m_pImgTemp[i*srcImg.GetWidth() + j];
 		}
 	}
 	delete[] m_codes;
-	delete[] pBmpBuf;
+	delete[] m_pImgTemp;
 }
 
 
@@ -51,7 +51,7 @@ void CMyHuffman::HuffmanCodeInit()
 {
 	int i;
 	for (i = 0; i < 256; i++)//灰度值记录清零  
-		hist[i] = 0;
+		m_nHist[i] = 0;
 	//初始化哈夫曼树
 	for (i = 0; i < 600; i++)
 	{
@@ -122,11 +122,11 @@ void CMyHuffman::HuffmanCode()
 
 	for (i = 0; i < 256; i++)
 	{//创建初始节点  
-		Feq[i] = (float)hist[i] / (float)(m_nHeight * m_nWidth);//计算灰度值频率  
-		if (hist[i] > 0)
+		Feq[i] = (float)m_nHist[i] / (float)(m_nHeight * m_nWidth);//计算灰度值频率  
+		if (m_nHist[i] > 0)
 		{
 			node[NodeNum].color = i;
-			node[NodeNum].num = hist[i];
+			node[NodeNum].num = m_nHist[i];
 			node[NodeNum].lson = node[NodeNum].rson = -1;   //叶子节点无左右儿子  
 			NodeNum++;
 		}
@@ -187,7 +187,7 @@ void CMyHuffman::HuffmanCode()
 	for (i = 0; i < m_nHeight; i++)
 		for (j = 0; j < m_nWidth; j++)
 		{
-			lpBuf = (unsigned char *)pBmpBuf + m_nWidth * i + j;
+			lpBuf = (unsigned char *)m_pImgTemp + m_nWidth * i + j;
 			for (k = 0; k < CodeLen[*(lpBuf)]; k++)
 				m_codes[m_nCodesLen++] = (int)(CodeStr[*(lpBuf)][k] - '0'); //现在存的就都是1010的数字了
 		}
@@ -206,7 +206,7 @@ void CMyHuffman::HuffmanDecode()
 	{
 		if (node[p].color >= 0)
 		{
-			*(pBmpBuf + j) = node[p].color;
+			*(m_pImgTemp + j) = node[p].color;
 			//printf("%d ",*(pBmpBuf + j));  
 			j++;
 			p = m_NodeStart;

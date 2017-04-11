@@ -185,8 +185,10 @@ BEGIN_MESSAGE_MAP(CImage_ProcessingView, CScrollView)
 	ON_COMMAND(ID_ENCODE_HUFFMAN, &CImage_ProcessingView::OnEncodeHuffman)
 	ON_COMMAND(ID_ENCODE_SHANNON, &CImage_ProcessingView::OnEncodeShannon)
 	ON_COMMAND(ID_ENCODE_BIT_PLANE, &CImage_ProcessingView::OnEncodeBitPlane)
-		ON_COMMAND(ID_ENCODE_HUFFMAN2, &CImage_ProcessingView::OnEncodeHuffman2)
-		END_MESSAGE_MAP()
+	ON_COMMAND(ID_ENCODE_HUFFMAN2, &CImage_ProcessingView::OnEncodeHuffman2)
+	ON_COMMAND(ID_ENCODE_RUNLENGTH, &CImage_ProcessingView::OnEncodeRunlength)
+	ON_COMMAND(ID_ENCODE_SHIVERING, &CImage_ProcessingView::OnEncodeShivering)
+END_MESSAGE_MAP()
 
 // CImage_ProcessingView 构造/析构
 
@@ -7649,15 +7651,9 @@ void CImage_ProcessingView::OnEncodeBitPlane()
 
 	int bits[8] = { 1,2,4,8,16,32,64,128 };
 
-	//int **planes = new int *[8];
-	//for (int i = 0; i != 8; ++i)
-	//{
-	//	*planes = new int[m_nWidth*m_nHeight];
-	//}
-
 	MyImage_ planes[8];
-	for (int i=0;i!=8;++i)
-		planes[i].Create(m_nWidth, m_nHeight,0);
+	for (int i = 0; i != 8; ++i)
+		planes[i].Create(m_nWidth, m_nHeight, 0);
 
 	for (int k = 0; k != 8; ++k)
 		for (int i = 0; i != m_nHeight; ++i)
@@ -7673,7 +7669,7 @@ void CImage_ProcessingView::OnEncodeBitPlane()
 	for (int i = 0; i != 8; ++i)
 	{
 		planes[i].CopyTo(m_ImageToDlgShow);
-		wndName.Format(_T("第%d比特面"),i + 1);
+		wndName.Format(_T("第%d比特面"), i + 1);
 		CDlgShowImg *pDlg = new CDlgShowImg(wndName);
 		pDlg->Create(IDD_DLG_SHOW_IMG, this);
 		pDlg->ShowWindow(SW_SHOW);
@@ -7704,3 +7700,247 @@ void CImage_ProcessingView::OnEncodeHuffman2()
 	//UpdateState(); //ontoGray里面已经updatestate了
 
 }
+
+
+
+void CImage_ProcessingView::OnEncodeRunlength()
+{
+	// TODO: 在此添加命令处理程序代码
+	if (m_Image.IsNull())
+		return;
+
+	if (m_ImageAfter.IsNull())
+		m_Image.CopyTo(m_ImageAfter);
+
+	doThreshold(m_ImageAfter, m_ImageAfter, GetOtsuThresh(m_ImageAfter), 0.0);
+
+	//先统计游长,保存在vector中,起始数字为1则表示白开始，为0表示黑开始
+	vector<vector<int>> runLengths;
+	int originCodeLen = 0;
+	for (int i = 0; i != m_nHeight; ++i)
+	{
+		vector<int> runlenth;
+
+		//runLengths.push_back(runlenth); //不能写在这里，不能理解为类似于java那些的引用类型!!!
+
+		int length = 1;
+		byte pre = m_ImageAfter.m_pBits[0][i][0];
+		runlenth.push_back(pre == 0 ? 0 : 1);
+
+		for (int j = 1; j != m_nWidth; ++j)
+		{
+			byte cur = m_ImageAfter.m_pBits[0][i][j];
+			if (cur == pre)
+			{
+				length++;
+			}
+			else
+			{
+				runlenth.push_back(length);
+				length = 1;
+				pre = cur;
+			}
+			if (j == m_nWidth - 1) //最后一个数需要单独处理
+			{
+				runlenth.push_back(length);
+			}
+		}
+		runLengths.push_back(runlenth);
+		originCodeLen += (runlenth.size() - 1);
+	}
+
+	//统计都有哪些游长
+	//长度，出现次数
+	map<int, int> mapDict;
+	for (int i = 0; i != runLengths.size(); ++i)
+	{
+		for (int j = 1; j != runLengths[i].size(); ++j)
+		{
+			mapDict[runLengths[i][j]]++;
+		}
+	}
+
+	//对行程长度进行霍夫曼编码
+
+	//统计直方图及频率
+	int *hist = new int[mapDict.size()];
+	double *frep = new double[mapDict.size()];
+	int sum = 0;
+	int i = 0;
+	for (auto it = mapDict.begin(); it != mapDict.end(); it++, ++i)
+	{
+		hist[i] = it->second;
+		sum += it->second;
+	}
+	for (int i = 0; i != mapDict.size(); ++i)
+		frep[i] = (double)hist[i] / (double)sum;
+
+	//开始霍夫曼编码
+
+	//先分配字典(针对每一种长度分配一个码字)
+	char **dict = (char **)new char*[mapDict.size()];
+
+	for (int i = 0; i < mapDict.size(); i++)
+	{
+		dict[i] = (char*)new  char*[mapDict.size() + 1]; //最长的编码是编码数目加一
+	}
+
+
+	int *CodeLen = new int[mapDict.size()];
+
+
+	//得到字典
+	CHuffmanCoding huffman;
+	huffman.doHuffmanCoding(hist, mapDict.size(), dict, CodeLen);
+
+	for (int i = 0; i != mapDict.size(); ++i)
+	{
+		cout << CodeLen[i] << "\t";
+	}
+
+	//得到字典后对数据编码
+	//m_nCodesLen = 0;
+	//m_codes = new bool[histLen * 8]; //先动态分配一个最大值,即每个都用8bit编码,其实肯定用不到，因为是变长编码嘛
+	//unsigned char * lpBuf;
+	//for (i = 0; i < m_nHeight; i++)
+	//	for (j = 0; j < m_nWidth; j++)
+	//	{
+	//		lpBuf = (unsigned char *)m_pImgTemp + m_nWidth * i + j;
+	//		for (k = 0; k < CodeLen[*(lpBuf)]; k++)
+	//			m_codes[m_nCodesLen++] = (int)(CodeStr[*(lpBuf)][k] - '0'); //现在存的就都是1010的数字了
+	//	}
+	int nCodelen = 0;
+	int temp = ceil(log2(m_nWidth));
+	bool *codes = new bool[originCodeLen*temp];//最长的游程其实就是图像的宽度所需的位数，比如这里是512就是2^9，需要9位
+
+	for (int i = 0; i != runLengths.size(); ++i)
+	{
+		for (int j = 1; j < runLengths[i].size(); ++j)
+		{
+			int value = runLengths[i][j];
+			for (int k = 0; k < CodeLen[value]; k++)
+			{
+				codes[nCodelen++] = (int)(dict[value][k] - '0');
+			}
+
+		}
+	}
+
+	cout << nCodelen << endl;
+
+	return;
+
+}
+
+//支持IN-PLACE操作
+void CImage_ProcessingView::PaddingImage(const MyImage_ &srcImg, MyImage_ &dstImg, COLORREF color)
+{
+	if (srcImg.IsNull())
+		return;
+
+	MyImage_ imgTemp;
+	int xpadding = 16 - (srcImg.GetWidth() % 16);
+	int ypadding = 16 - (srcImg.GetHeight() % 16);
+
+	if (xpadding != 16 && ypadding != 16) // x和y都需要填充
+	{
+		imgTemp.Create(srcImg.GetWidth() + xpadding, srcImg.GetHeight() + ypadding, 0);
+	}
+
+	if (xpadding != 16 && ypadding == 16)
+	{
+		imgTemp.Create(srcImg.GetWidth() + xpadding, srcImg.GetHeight(), 0);
+	}
+
+	if (xpadding == 16 && ypadding != 16)
+	{
+		imgTemp.Create(srcImg.GetWidth(), srcImg.GetHeight() + ypadding, 0);
+	}
+
+	if (xpadding == 16 && ypadding == 16) //都不需要填充
+	{
+		srcImg.CopyTo(imgTemp);
+		imgTemp.CopyTo(dstImg);
+		return;
+	}
+
+	for (int i = 0; i != imgTemp.GetHeight(); ++i)
+	{
+		for (int j = 0; j != imgTemp.GetWidth(); ++j)
+		{
+			if (i < srcImg.GetHeight() && j < srcImg.GetWidth())
+			{
+				imgTemp.m_pBits[0][i][j] = srcImg.m_pBits[0][i][j];
+				imgTemp.m_pBits[1][i][j] = srcImg.m_pBits[1][i][j];
+				imgTemp.m_pBits[2][i][j] = srcImg.m_pBits[2][i][j];
+			}
+			else
+			{
+				imgTemp.m_pBits[0][i][j] = GetBValue(color);
+				imgTemp.m_pBits[1][i][j] = GetGValue(color);
+				imgTemp.m_pBits[2][i][j] = GetRValue(color);
+			}
+		}
+	}
+	imgTemp.CopyTo(dstImg);
+
+}
+
+void CImage_ProcessingView::OnEncodeShivering()
+{
+	// TODO: 在此添加命令处理程序代码
+
+	if (m_Image.IsNull())
+		return;
+
+	if (m_ImageAfter.IsNull())
+		m_Image.CopyTo(m_ImageAfter);
+
+	OnTogray();
+
+	int ShiverMat[256];
+
+	ifstream ifs("shiveringMat.txt");
+
+	//读入抖动矩阵
+	for (int i = 0; i != 16; ++i)
+	{
+		for (int j = 0; j != 16; ++j)
+		{
+			ifs >> ShiverMat[i * 16 + j];
+		}
+	}
+
+	//先检查图像的宽度和高度是不是16的倍数,如果不是则进行填充
+	MyImage_ imgTemp;
+	PaddingImage(m_ImageAfter, m_ImageAfter, 0);
+	//之后进行编码
+
+	m_ImageToDlgShow.Create(m_ImageAfter.GetWidth(), m_ImageAfter.GetHeight(), 0);
+	for (int i = 0; i != m_ImageAfter.GetHeight(); ++i)
+	{
+		for (int j = 0; j != m_ImageAfter.GetWidth(); ++j)
+		{
+			if (m_ImageAfter.m_pBits[0][i][j] < ShiverMat[i % 16 * 16 + j % 16])
+			{
+				m_ImageToDlgShow.m_pBits[0][i][j] = 0;
+				m_ImageToDlgShow.m_pBits[1][i][j] = 0;
+				m_ImageToDlgShow.m_pBits[2][i][j] = 0;
+			}
+			else
+			{
+				m_ImageToDlgShow.m_pBits[0][i][j] = 255;
+				m_ImageToDlgShow.m_pBits[1][i][j] = 255;
+				m_ImageToDlgShow.m_pBits[2][i][j] = 255;
+			}
+		}
+	}
+
+	m_ImageToDlgShow.Save(L"decoded_shivering.bmp"); //保存一张方便对比
+	CDlgShowImg *pDlg = new CDlgShowImg(_T("抖动编码结果"));
+	pDlg->Create(IDD_DLG_SHOW_IMG, this);
+	pDlg->ShowWindow(SW_SHOW);
+
+
+}
+

@@ -200,6 +200,7 @@
     <ClInclude Include="DlgThresh.h" />
     <ClInclude Include="HoughTransformer.h" />
     <ClInclude Include="Huffman.h" />
+    <ClInclude Include="HuffmanCoding.h" />
     <ClInclude Include="ImagesStock.h" />
     <ClInclude Include="Image_Processing.h" />
     <ClInclude Include="Image_ProcessingDoc.h" />
@@ -233,6 +234,7 @@
     <ClCompile Include="DlgThresh.cpp" />
     <ClCompile Include="HoughTransformer.cpp" />
     <ClCompile Include="Huffman.cpp" />
+    <ClCompile Include="HuffmanCoding.cpp" />
     <ClCompile Include="ImagesStock.cpp" />
     <ClCompile Include="Image_Processing.cpp" />
     <ClCompile Include="Image_ProcessingDoc.cpp" />

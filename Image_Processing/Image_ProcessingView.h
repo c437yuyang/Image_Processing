@@ -25,6 +25,7 @@
 #include "HoughTransformer.h"
 #include "Huffman.h"
 #include "MyHuffman.h"
+#include "HuffmanCoding.h"
 
 #include <cmath>
 #include <map>
@@ -207,6 +208,8 @@ private:
 	void CImage_ProcessingView::edgeLink(int x1,int y1,int index,double lowThresh,vector<double> &dVecMid,vector<double> &dVecHigh,vector<bool> &bVec,vector<bool> &bVec1);
 	void doMorphDilate(const MyImage_ &srcImg,MyImage_ &dstImg,int nSize);
 	void doMorphErode(const MyImage_ &srcImg,MyImage_ &dstImg,int nSize);
+
+	void PaddingImage(const MyImage_ &srcImg, MyImage_ &dstImg, COLORREF color); //图像右下角填充指定颜色
 public:
 	afx_msg void OnReverse();
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
@@ -326,6 +329,8 @@ public:
 	afx_msg void OnEncodeShannon();
 	afx_msg void OnEncodeBitPlane();
 	afx_msg void OnEncodeHuffman2();
+	afx_msg void OnEncodeRunlength();
+	afx_msg void OnEncodeShivering();
 };
 
 #ifndef _DEBUG  // Image_ProcessingView.cpp 中的调试版本
