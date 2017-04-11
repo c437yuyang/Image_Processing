@@ -13,11 +13,9 @@ CMyHuffman::~CMyHuffman()
 
 void CMyHuffman::DoHuffmanCode(const MyImage_ & srcImg, MyImage_ & dstImg)
 {
-	int lineByte = srcImg.GetWidth();
 	m_nHeight = srcImg.GetHeight();
 	m_nWidth = srcImg.GetWidth();
-	biBitCount = 8;
-	pBmpBuf = new unsigned char[lineByte * m_nHeight];
+	pBmpBuf = new unsigned char[m_nWidth * m_nHeight];
 
 	//初始化hist和huffman树
 	HuffmanCodeInit();
@@ -117,7 +115,7 @@ int CMyHuffman::MinNode()
 	return j;
 }
 
-//编码主函数  
+//编码主函数
 void CMyHuffman::HuffmanCode()
 {
 	int i, j, k, a, b;

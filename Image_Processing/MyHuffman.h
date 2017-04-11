@@ -23,11 +23,8 @@ private:
 	int m_nWidth;//图像的宽  
 	int m_nHeight;//图像的高  
 
-	int biBitCount;//图像类型  
-
 	int hist[256];//各灰度值出现的次数   
 	float Feq[256];//各灰度值出现的频率   
-
 
 	int NodeNum;    //Huffman树总节点个数  
 	int m_NodeStart;  //Huffman树起始节点  
