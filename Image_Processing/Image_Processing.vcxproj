@@ -206,6 +206,7 @@
     <ClInclude Include="Image_ProcessingView.h" />
     <ClInclude Include="MainFrm.h" />
     <ClInclude Include="MotionFilter.h" />
+    <ClInclude Include="MyHuffman.h" />
     <ClInclude Include="MyImage_.h" />
     <ClInclude Include="MyImage_double.h" />
     <ClInclude Include="NoiseDlg.h" />
@@ -238,6 +239,7 @@
     <ClCompile Include="Image_ProcessingView.cpp" />
     <ClCompile Include="MainFrm.cpp" />
     <ClCompile Include="MotionFilter.cpp" />
+    <ClCompile Include="MyHuffman.cpp" />
     <ClCompile Include="MyImage_.cpp" />
     <ClCompile Include="MyImage_double.cpp" />
     <ClCompile Include="NoiseDlg.cpp" />

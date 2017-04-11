@@ -24,6 +24,7 @@
 #include "MotionFilter.h"
 #include "HoughTransformer.h"
 #include "Huffman.h"
+#include "MyHuffman.h"
 
 #include <cmath>
 #include <map>
@@ -324,6 +325,7 @@ public:
 	afx_msg void OnEncodeHuffman();
 	afx_msg void OnEncodeShannon();
 	afx_msg void OnEncodeBitPlane();
+	afx_msg void OnEncodeHuffman2();
 };
 
 #ifndef _DEBUG  // Image_ProcessingView.cpp 中的调试版本

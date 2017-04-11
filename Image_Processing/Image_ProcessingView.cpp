@@ -185,7 +185,8 @@ BEGIN_MESSAGE_MAP(CImage_ProcessingView, CScrollView)
 	ON_COMMAND(ID_ENCODE_HUFFMAN, &CImage_ProcessingView::OnEncodeHuffman)
 	ON_COMMAND(ID_ENCODE_SHANNON, &CImage_ProcessingView::OnEncodeShannon)
 	ON_COMMAND(ID_ENCODE_BIT_PLANE, &CImage_ProcessingView::OnEncodeBitPlane)
-END_MESSAGE_MAP()
+		ON_COMMAND(ID_ENCODE_HUFFMAN2, &CImage_ProcessingView::OnEncodeHuffman2)
+		END_MESSAGE_MAP()
 
 // CImage_ProcessingView 构造/析构
 
@@ -7679,4 +7680,26 @@ void CImage_ProcessingView::OnEncodeBitPlane()
 	}
 
 	//UpdateState(); //ontoGray里面已经updatestate了
+}
+
+
+void CImage_ProcessingView::OnEncodeHuffman2()
+{
+	// TODO: 在此添加命令处理程序代码
+	if (m_Image.IsNull())
+		return;
+
+	if (m_ImageAfter.IsNull())
+		m_Image.CopyTo(m_ImageAfter);
+
+	OnTogray();
+
+	CMyHuffman huffman;
+	m_ImageToDlgShow.Create(m_nWidth, m_nHeight, 0);
+	MyImage_ imgTemp(m_nWidth,m_nHeight,0); //创建为纯色图为了验证结果
+	huffman.DoHuffmanCode(m_ImageAfter, m_ImageToDlgShow);
+	CDlgShowImg *pDlg = new CDlgShowImg(_T("香农编码解码结果"));
+	pDlg->Create(IDD_DLG_SHOW_IMG, this);
+	pDlg->ShowWindow(SW_SHOW);
+
 }

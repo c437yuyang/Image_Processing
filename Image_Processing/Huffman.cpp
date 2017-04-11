@@ -33,7 +33,7 @@ int CHuffman::saveInfo(char *writePath, int lineByte) {
 
 	FILE *fout;
 	fout = fopen(writePath, "w");
-	fprintf(fout, "%d %d %d\n", NodeStart, NodeNum, InfLen);//输出起始节点、节点总数、图像所占空间  
+	fprintf(fout, "%d %d %d\n", m_NodeStart, NodeNum, InfLen);//输出起始节点、节点总数、图像所占空间  
 	for (i = 0; i < NodeNum; i++) {     //输出Huffman树  
 		fprintf(fout, "%d %d %d\n", node[i].color, node[i].lson, node[i].rson);
 	}
@@ -61,7 +61,7 @@ bool CHuffman::readHuffman(char *Name)
 		printf("未找到指定文件！\n");
 		return 0;
 	}
-	fscanf(fin, "%d %d %d", &NodeStart, &NodeNum, &InfLen);
+	fscanf(fin, "%d %d %d", &m_NodeStart, &NodeNum, &InfLen);
 	//printf("%d %d %d\n",NodeStart,NodeNum,InfLen);  
 	for (i = 0; i < NodeNum; i++) {
 		fscanf(fin, "%d %d %d", &node[i].color, &node[i].lson, &node[i].rson);
@@ -111,7 +111,7 @@ bool CHuffman::readHuffman(char *Name)
 
 void CHuffman::HuffmanDecode()
 {
-	//获取编码信息  
+	//获取编码信息
 	int i, j, tmp;
 	int lineByte = (bmpWidth * biBitCount / 8 + 3) / 4 * 4;
 	for (i = 0; i < InfLen / 8; i++)
@@ -130,7 +130,7 @@ void CHuffman::HuffmanDecode()
 	printf("\n");*/
 
 	//解码  
-	int p = NodeStart;  //遍历指针位置  
+	int p = m_NodeStart;  //遍历指针位置  
 	j = 0;
 	i = 0;
 	do
@@ -140,7 +140,7 @@ void CHuffman::HuffmanDecode()
 			*(pBmpBuf + j) = node[p].color;
 			//printf("%d ",*(pBmpBuf + j));  
 			j++;
-			p = NodeStart;
+			p = m_NodeStart;
 		}
 		if (ImgInf[i] == 1)
 			p = node[p].lson;
@@ -162,7 +162,7 @@ void CHuffman::HuffmanCodeInit()
 {
 	int i;
 	for (i = 0; i <256; i++)//灰度值记录清零  
-		Num[i] = 0;
+		hist[i] = 0;
 	//初始化哈夫曼树  
 	for (i = 0; i < 600; i++)
 	{
@@ -220,7 +220,7 @@ int CHuffman::MinNode()
 				j = i;
 	if (j != -1)
 	{
-		NodeStart = j;
+		m_NodeStart = j;
 		node[j].mark = 1;
 	}
 	return j;
@@ -233,11 +233,11 @@ void CHuffman::HuffmanCode()
 
 	for (i = 0; i < 256; i++)
 	{//创建初始节点  
-		Feq[i] = (float)Num[i] / (float)(bmpHeight * bmpWidth);//计算灰度值频率  
-		if (Num[i] > 0)
+		Feq[i] = (float)hist[i] / (float)(bmpHeight * bmpWidth);//计算灰度值频率  
+		if (hist[i] > 0)
 		{
 			node[NodeNum].color = i;
-			node[NodeNum].num = Num[i];
+			node[NodeNum].num = hist[i];
 			node[NodeNum].lson = node[NodeNum].rson = -1;   //叶子节点无左右儿子  
 			NodeNum++;
 		}
@@ -263,8 +263,7 @@ void CHuffman::HuffmanCode()
 	}
 
 	//根据建好的Huffman树编码(深搜实现)  
-	dfs(NodeStart, 0);
-
+	dfs(m_NodeStart, 0);
 
 	//计算平均码长,信源熵,编码效率
 	double HX = 0.0, L = 0.0;
@@ -285,19 +284,19 @@ void CHuffman::HuffmanCode()
 	int sum = 0;
 	//  printf("Huffman编码信息如下：\n");  
 	for (i = 0; i < 256; i++)
-		if (Num[i] > 0)
+		if (hist[i] > 0)
 		{
-			sum += CodeLen[i] * Num[i];
+			sum += CodeLen[i] * hist[i];
 			//printf("灰度值：%3d  频率: %f  码长: %2d  编码: %s\n", i, Feq[i], CodeLen[i], CodeStr[i]);
 		}
 	//printf("原始总码长：%d\n", bmpWidth * bmpHeight * 8);
 	//printf("Huffman编码总码长：%d\n", sum);
 	//printf("压缩比：%.3f : 1\n", (float)(bmpWidth * bmpHeight * 8) / (float)sum);
 
-	//记录图像信息  
+	//记录图像信息
 	InfLen = 0;
 	int lineByte = (bmpWidth * biBitCount / 8 + 3) / 4 * 4;
-	ImgInf = new bool[bmpHeight*bmpWidth*8]; //先动态分配一个最大值,即每个都用8bit编码
+	ImgInf = new bool[bmpHeight*bmpWidth*8]; //先动态分配一个最大值,即每个都用8bit编码,其实肯定用不到，因为是变长编码嘛
 	for (i = 0; i < bmpHeight; i++)
 		for (j = 0; j < bmpWidth; j++)
 		{
@@ -316,12 +315,14 @@ void CHuffman::HuffmanCode()
 		i += 8;
 		j++;
 	}
+	//cout << j << endl;
 }
 
 //保存文件  
 bool CHuffman::saveBmp(char *bmpName, unsigned char *imgBuf, int width, int height,
 	int biBitCount, RGBQUAD *pColorTable)
 {
+	//imgBuf = pBmpBuf
 	//如果位图数据指针为0,则没有数据传入,函数返回  
 	if (!imgBuf)
 		return 0;
@@ -410,7 +411,7 @@ bool CHuffman::readBmp(char *bmpName)
 	bmpHeight = head.biHeight;
 	biBitCount = head.biBitCount;
 
-	//定义变量，计算图像每行像素所占的字节数（必须是4的倍数）  
+	//定义变量，计算图像每行像素所占的字节数（必须是4的倍数），对灰度图来说就是图像宽度，然后可能不是4的倍数就扩充到4的倍数，比如409到412
 	int lineByte = (bmpWidth * biBitCount / 8 + 3) / 4 * 4;
 
 	//灰度图像有颜色表，且颜色表表项为256  
@@ -441,8 +442,6 @@ void CHuffman::DoHuffmanCode(const MyImage_ &srcImg,MyImage_ & dstImg)
 	biBitCount = 8;
 	pBmpBuf = new unsigned char[lineByte * bmpHeight];
 
-
-
 	//srcImg.Save(L"huffman.bmp");
 
 	//CImage imgTemp;
@@ -471,7 +470,7 @@ void CHuffman::DoHuffmanCode(const MyImage_ &srcImg,MyImage_ & dstImg)
 		for (int j = 0; j < bmpWidth; j++)
 		{
 			lpBuf = (unsigned char *)pBmpBuf + lineByte * i + j;
-			Num[*(lpBuf)] += 1;
+			hist[*(lpBuf)] += 1;
 		}
 
 	//调用编码  
