@@ -7593,7 +7593,7 @@ void CImage_ProcessingView::OnEncodeShannon()
 	int match_digits = 0;
 	for (int i = 0; i != m_ImageAfter.GetHeight(); ++i)
 	{
-		for (int j = 0; j != m_ImageAfter.GetHeight(); ++j)
+		for (int j = 0; j != m_ImageAfter.GetWidth(); ++j)
 		{
 			idx = i*m_ImageAfter.GetWidth() + j;
 			decodeValue = -1; //首先让当前像素的解码值为-1表示还未找到
@@ -7628,6 +7628,8 @@ void CImage_ProcessingView::OnEncodeShannon()
 
 	ldTimeEnd = GetTickCount();
 	std::cout << "香农编码、解码完成，" << "耗时：" << (ldTimeEnd - ldTimeStart) / 1000 << "s" << endl;
+	//UpdateState(); //ontoGray里面已经updatestate了
+
 }
 
 
@@ -7666,8 +7668,6 @@ void CImage_ProcessingView::OnEncodeBitPlane()
 				planes[k].m_pBits[2][i][j] = (m_ImageAfter.m_pBits[0][i][j] & bits[k]) > 0 ? 255 : 0;
 			}
 		}
-
-
 	CString wndName;
 	for (int i = 0; i != 8; ++i)
 	{
@@ -7678,6 +7678,5 @@ void CImage_ProcessingView::OnEncodeBitPlane()
 		pDlg->ShowWindow(SW_SHOW);
 	}
 
-	
-
+	//UpdateState(); //ontoGray里面已经updatestate了
 }
