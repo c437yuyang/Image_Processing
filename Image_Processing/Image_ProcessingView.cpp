@@ -188,7 +188,8 @@ BEGIN_MESSAGE_MAP(CImage_ProcessingView, CScrollView)
 	ON_COMMAND(ID_ENCODE_HUFFMAN2, &CImage_ProcessingView::OnEncodeHuffman2)
 	ON_COMMAND(ID_ENCODE_RUNLENGTH, &CImage_ProcessingView::OnEncodeRunlength)
 	ON_COMMAND(ID_ENCODE_SHIVERING, &CImage_ProcessingView::OnEncodeShivering)
-END_MESSAGE_MAP()
+		ON_COMMAND(ID_ENCODE_BLOCK_CUT, &CImage_ProcessingView::OnEncodeBlockCut)
+		END_MESSAGE_MAP()
 
 // CImage_ProcessingView 构造/析构
 
@@ -7859,31 +7860,32 @@ void CImage_ProcessingView::OnEncodeRunlength()
 }
 
 //支持IN-PLACE操作
-void CImage_ProcessingView::PaddingImage(const MyImage_ &srcImg, MyImage_ &dstImg, COLORREF color)
+//根据pads大小来填充,比如是pad=16的话，则将图像填充为16的倍数
+void CImage_ProcessingView::PaddingImage(const MyImage_ &srcImg, MyImage_ &dstImg, COLORREF color,int pads)
 {
 	if (srcImg.IsNull())
 		return;
 
 	MyImage_ imgTemp;
-	int xpadding = 16 - (srcImg.GetWidth() % 16);
-	int ypadding = 16 - (srcImg.GetHeight() % 16);
+	int xpadding = pads - (srcImg.GetWidth() % pads);
+	int ypadding = pads - (srcImg.GetHeight() % pads);
 
-	if (xpadding != 16 && ypadding != 16) // x和y都需要填充
+	if (xpadding != pads && ypadding != pads) // x和y都需要填充
 	{
 		imgTemp.Create(srcImg.GetWidth() + xpadding, srcImg.GetHeight() + ypadding, 0);
 	}
 
-	if (xpadding != 16 && ypadding == 16)
+	if (xpadding != pads && ypadding == pads)
 	{
 		imgTemp.Create(srcImg.GetWidth() + xpadding, srcImg.GetHeight(), 0);
 	}
 
-	if (xpadding == 16 && ypadding != 16)
+	if (xpadding == pads && ypadding != pads)
 	{
 		imgTemp.Create(srcImg.GetWidth(), srcImg.GetHeight() + ypadding, 0);
 	}
 
-	if (xpadding == 16 && ypadding == 16) //都不需要填充
+	if (xpadding == pads && ypadding == pads) //都不需要填充
 	{
 		srcImg.CopyTo(imgTemp);
 		imgTemp.CopyTo(dstImg);
@@ -7939,7 +7941,10 @@ void CImage_ProcessingView::OnEncodeShivering()
 
 	//先检查图像的宽度和高度是不是16的倍数,如果不是则进行填充
 	MyImage_ imgTemp;
-	PaddingImage(m_ImageAfter, m_ImageAfter, 0);
+	PaddingImage(m_ImageAfter, m_ImageAfter, 0,16);
+
+	UpdateState();
+	return;
 	//之后进行编码
 
 	m_ImageToDlgShow.Create(m_ImageAfter.GetWidth(), m_ImageAfter.GetHeight(), 0);
@@ -7970,3 +7975,11 @@ void CImage_ProcessingView::OnEncodeShivering()
 
 }
 
+
+
+
+void CImage_ProcessingView::OnEncodeBlockCut()
+{
+	// TODO: 在此添加命令处理程序代码
+
+}

@@ -209,7 +209,7 @@ private:
 	void doMorphDilate(const MyImage_ &srcImg,MyImage_ &dstImg,int nSize);
 	void doMorphErode(const MyImage_ &srcImg,MyImage_ &dstImg,int nSize);
 
-	void PaddingImage(const MyImage_ &srcImg, MyImage_ &dstImg, COLORREF color); //图像右下角填充指定颜色
+	void PaddingImage(const MyImage_ &srcImg, MyImage_ &dstImg, COLORREF color,int pads); //图像右下角填充指定颜色
 public:
 	afx_msg void OnReverse();
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
@@ -331,6 +331,7 @@ public:
 	afx_msg void OnEncodeHuffman2();
 	afx_msg void OnEncodeRunlength();
 	afx_msg void OnEncodeShivering();
+	afx_msg void OnEncodeBlockCut();
 };
 
 #ifndef _DEBUG  // Image_ProcessingView.cpp 中的调试版本
