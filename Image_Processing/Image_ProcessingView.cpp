@@ -7720,9 +7720,7 @@ void CImage_ProcessingView::OnEncodeRunlength()
 	for (int i = 0; i != m_nHeight; ++i)
 	{
 		vector<int> runlenth;
-
 		//runLengths.push_back(runlenth); //不能写在这里，不能理解为类似于java那些的引用类型!!!
-
 		int length = 1;
 		byte pre = m_ImageAfter.m_pBits[0][i][0];
 		runlenth.push_back(pre == 0 ? 0 : 1);
@@ -7746,9 +7744,39 @@ void CImage_ProcessingView::OnEncodeRunlength()
 			}
 		}
 		runLengths.push_back(runlenth);
-		originCodeLen += (runlenth.size() - 1);
+		//originCodeLen += (runlenth.size() - 1);
 	}
 
+	//现在runlengths里面就是游程编码了
+	//从游程编码解码恢复原始数据
+	m_ImageToDlgShow.Create(m_ImageAfter.GetWidth(), m_ImageAfter.GetHeight(), 0);
+	for (int i=0;i!=m_nHeight;++i)
+	{
+		int sum = 0;
+		int colnum = 0;
+		BYTE color = (runLengths[i][0] == 0 ? 0 : 255);
+		for (auto it=runLengths[i].begin()+1;it!=runLengths[i].end();++it)
+		{
+			for (int k=0;k!=*it;++k,++colnum)
+			{
+				m_ImageToDlgShow.m_pBits[0][i][colnum] = color;
+				m_ImageToDlgShow.m_pBits[1][i][colnum] = color;
+				m_ImageToDlgShow.m_pBits[2][i][colnum] = color;
+			}
+			color = (color == 0 ? 255 : 0);
+		}
+		/*cout << sum << "\t";*/
+	}
+
+	m_ImageToDlgShow.Save(L"decoded_runlength.bmp"); //保存一张方便对比
+	CDlgShowImg *pDlg = new CDlgShowImg(_T("游程编码解码结果"));
+	pDlg->Create(IDD_DLG_SHOW_IMG, this);
+	pDlg->ShowWindow(SW_SHOW);
+	UpdateState();
+	return;
+	
+
+	//对游程编码进行霍夫曼编码(没做了。。)
 	//统计都有哪些游长
 	//长度，出现次数
 	map<int, int> mapDict;
@@ -7758,9 +7786,7 @@ void CImage_ProcessingView::OnEncodeRunlength()
 		{
 			mapDict[runLengths[i][j]]++;
 		}
-	}
-
-	//对行程长度进行霍夫曼编码
+	}	
 
 	//统计直方图及频率
 	int *hist = new int[mapDict.size()];
