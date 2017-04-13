@@ -80,7 +80,7 @@ CMyImage_double::CMyImage_double(MyImage_ &srcImg)
 {
 	m_nHeight = srcImg.GetHeight();
 	m_nWidth = srcImg.GetWidth();
-	m_bIsGrayed = false;
+	m_bIsGrayed = srcImg.IsGrayed();
 	// 通道 行 列,ch,y,x
 	m_pBits= (double***)new   double**[3];   
 	for(int i=0;i<3;i++)  

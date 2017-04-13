@@ -335,6 +335,7 @@ public:
 	afx_msg void OnEncodeRunlength();
 	afx_msg void OnEncodeShivering();
 	afx_msg void OnEncodeBlockCut();
+	afx_msg void OnEncodeEnclosing();
 };
 
 #ifndef _DEBUG  // Image_ProcessingView.cpp 中的调试版本

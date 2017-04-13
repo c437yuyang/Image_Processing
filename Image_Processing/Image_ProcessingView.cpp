@@ -189,7 +189,8 @@ BEGIN_MESSAGE_MAP(CImage_ProcessingView, CScrollView)
 	ON_COMMAND(ID_ENCODE_RUNLENGTH, &CImage_ProcessingView::OnEncodeRunlength)
 	ON_COMMAND(ID_ENCODE_SHIVERING, &CImage_ProcessingView::OnEncodeShivering)
 	ON_COMMAND(ID_ENCODE_BLOCK_CUT, &CImage_ProcessingView::OnEncodeBlockCut)
-END_MESSAGE_MAP()
+		ON_COMMAND(ID_ENCODE_ENCLOSING, &CImage_ProcessingView::OnEncodeEnclosing)
+		END_MESSAGE_MAP()
 
 // CImage_ProcessingView 构造/析构
 
@@ -8087,4 +8088,21 @@ void CImage_ProcessingView::OnEncodeBlockCut()
 	pDlg->ShowWindow(SW_SHOW);
 	return;
 
+}
+
+
+void CImage_ProcessingView::OnEncodeEnclosing()
+{
+	// TODO: 在此添加命令处理程序代码
+
+	if (m_Image.IsNull())
+		return;
+
+	if (m_ImageAfter.IsNull())
+		m_Image.CopyTo(m_ImageAfter);
+
+
+	//PaddingImage(m_ImageAfter, m_ImageAfter, 0, nBlockSize);
+	OnTogray();
+	CMyImage_double dImg
 }
