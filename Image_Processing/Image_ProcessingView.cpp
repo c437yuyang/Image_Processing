@@ -188,8 +188,8 @@ BEGIN_MESSAGE_MAP(CImage_ProcessingView, CScrollView)
 	ON_COMMAND(ID_ENCODE_HUFFMAN2, &CImage_ProcessingView::OnEncodeHuffman2)
 	ON_COMMAND(ID_ENCODE_RUNLENGTH, &CImage_ProcessingView::OnEncodeRunlength)
 	ON_COMMAND(ID_ENCODE_SHIVERING, &CImage_ProcessingView::OnEncodeShivering)
-		ON_COMMAND(ID_ENCODE_BLOCK_CUT, &CImage_ProcessingView::OnEncodeBlockCut)
-		END_MESSAGE_MAP()
+	ON_COMMAND(ID_ENCODE_BLOCK_CUT, &CImage_ProcessingView::OnEncodeBlockCut)
+END_MESSAGE_MAP()
 
 // CImage_ProcessingView 构造/析构
 
@@ -7751,14 +7751,14 @@ void CImage_ProcessingView::OnEncodeRunlength()
 	//现在runlengths里面就是游程编码了
 	//从游程编码解码恢复原始数据
 	m_ImageToDlgShow.Create(m_ImageAfter.GetWidth(), m_ImageAfter.GetHeight(), 0);
-	for (int i=0;i!=m_nHeight;++i)
+	for (int i = 0; i != m_nHeight; ++i)
 	{
 		int sum = 0;
 		int colnum = 0;
 		BYTE color = (runLengths[i][0] == 0 ? 0 : 255);
-		for (auto it=runLengths[i].begin()+1;it!=runLengths[i].end();++it)
+		for (auto it = runLengths[i].begin() + 1; it != runLengths[i].end(); ++it)
 		{
-			for (int k=0;k!=*it;++k,++colnum)
+			for (int k = 0; k != *it; ++k, ++colnum)
 			{
 				m_ImageToDlgShow.m_pBits[0][i][colnum] = color;
 				m_ImageToDlgShow.m_pBits[1][i][colnum] = color;
@@ -7775,7 +7775,7 @@ void CImage_ProcessingView::OnEncodeRunlength()
 	pDlg->ShowWindow(SW_SHOW);
 	UpdateState();
 	return;
-	
+
 
 	//对游程编码进行霍夫曼编码(没做了。。)
 	//统计都有哪些游长
@@ -7787,7 +7787,7 @@ void CImage_ProcessingView::OnEncodeRunlength()
 		{
 			mapDict[runLengths[i][j]]++;
 		}
-	}	
+	}
 
 	//统计直方图及频率
 	int *hist = new int[mapDict.size()];
@@ -7861,7 +7861,7 @@ void CImage_ProcessingView::OnEncodeRunlength()
 
 //支持IN-PLACE操作
 //根据pads大小来填充,比如是pad=16的话，则将图像填充为16的倍数
-void CImage_ProcessingView::PaddingImage(const MyImage_ &srcImg, MyImage_ &dstImg, COLORREF color,int pads)
+void CImage_ProcessingView::PaddingImage(const MyImage_ &srcImg, MyImage_ &dstImg, COLORREF color, int pads)
 {
 	if (srcImg.IsNull())
 		return;
@@ -7941,7 +7941,7 @@ void CImage_ProcessingView::OnEncodeShivering()
 
 	//先检查图像的宽度和高度是不是16的倍数,如果不是则进行填充
 	MyImage_ imgTemp;
-	PaddingImage(m_ImageAfter, m_ImageAfter, 0,16);
+	PaddingImage(m_ImageAfter, m_ImageAfter, 0, 16);
 
 	UpdateState();
 	return;
@@ -7981,5 +7981,100 @@ void CImage_ProcessingView::OnEncodeShivering()
 void CImage_ProcessingView::OnEncodeBlockCut()
 {
 	// TODO: 在此添加命令处理程序代码
+	// TODO: 在此添加命令处理程序代码
+	if (m_Image.IsNull())
+		return;
+
+	if (m_ImageAfter.IsNull())
+		m_Image.CopyTo(m_ImageAfter);
+
+
+	int nBlockSize = 2;
+	PaddingImage(m_ImageAfter, m_ImageAfter, 0, nBlockSize);
+	OnTogray();
+
+	int nXBlockNum = m_ImageAfter.GetWidth() / nBlockSize;
+	int nYBlockNum = m_ImageAfter.GetHeight() / nBlockSize;
+
+	double nAvgAll = 0.0, nAvgGT, nAvgLT;
+	int nCountGT, nCountLT;
+	
+	MyImage_ imgBit(m_ImageAfter.GetWidth(), m_ImageAfter.GetHeight(), 0);
+	for (int i = 0; i != nYBlockNum; ++i)
+	{
+		for (int j = 0; j != nXBlockNum; ++j)
+		{
+			nAvgAll = 0.0, nAvgGT = 0.0, nAvgLT = 0.0;
+			nCountGT = nCountLT = 0;
+			//求得每一个块的均值
+			for (int i1 = i*nBlockSize; i1 != (i + 1)*nBlockSize; ++i1)
+			{
+				for (int j1 = j*nBlockSize; j1 != (j + 1)*nBlockSize; ++j1)
+				{
+					nAvgAll += m_ImageAfter.m_pBits[0][i1][j1];
+				}
+			}
+
+			//根据每个块的均值得到比特面图 
+			for (int i1 = i*nBlockSize; i1 != (i + 1)*nBlockSize; ++i1)
+			{
+				for (int j1 = j*nBlockSize; j1 != (j + 1)*nBlockSize; ++j1)
+				{
+					imgBit.m_pBits[0][i1][j1] = m_ImageAfter.m_pBits[0][i1][j1] >= nAvgAll ? 255 : 0;
+					imgBit.m_pBits[1][i1][j1] = m_ImageAfter.m_pBits[0][i1][j1] >= nAvgAll ? 255 : 0;
+					imgBit.m_pBits[2][i1][j1] = m_ImageAfter.m_pBits[0][i1][j1] >= nAvgAll ? 255 : 0;
+				}
+			}
+
+			//根据比特面图计算每个小组的均值（0小组和1小组）
+			for (int i1 = i*nBlockSize; i1 != (i + 1)*nBlockSize; ++i1)
+			{
+				for (int j1 = j*nBlockSize; j1 != (j + 1)*nBlockSize; ++j1)
+				{
+					if (imgBit.m_pBits[0][i1][j1] == 255)
+					{
+						nAvgGT += m_ImageAfter.m_pBits[0][i1][j1];
+						nCountGT++;
+					}
+					else
+					{
+						nAvgLT += m_ImageAfter.m_pBits[0][i1][j1];
+						nCountLT++;
+					}
+				}
+			}
+			nAvgGT /= (double)nCountGT;
+			nAvgLT /= (double)nCountLT;
+
+			//根据每组均值得到最后的编码结果
+			for (int i1 = i*nBlockSize; i1 != (i + 1)*nBlockSize; ++i1)
+			{
+				for (int j1 = j*nBlockSize; j1 != (j + 1)*nBlockSize; ++j1)
+				{
+					if (imgBit.m_pBits[0][i1][j1] == 255)
+					{
+						imgBit.m_pBits[0][i1][j1] = nAvgGT;
+						imgBit.m_pBits[1][i1][j1] = nAvgGT;
+						imgBit.m_pBits[2][i1][j1] = nAvgGT;
+
+					}
+					else
+					{
+						imgBit.m_pBits[0][i1][j1] = nAvgLT;
+						imgBit.m_pBits[1][i1][j1] = nAvgLT;
+						imgBit.m_pBits[2][i1][j1] = nAvgLT;
+					}
+				}
+			}
+		}
+	}
+
+	imgBit.CopyTo(m_ImageToDlgShow);
+	CDlgShowImg *pDlg = new CDlgShowImg(_T("块截止编码结果"));
+	pDlg->Create(IDD_DLG_SHOW_IMG, this);
+	pDlg->ShowWindow(SW_SHOW);
+	return;
+
+
 
 }
