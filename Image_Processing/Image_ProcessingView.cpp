@@ -189,8 +189,8 @@ BEGIN_MESSAGE_MAP(CImage_ProcessingView, CScrollView)
 	ON_COMMAND(ID_ENCODE_RUNLENGTH, &CImage_ProcessingView::OnEncodeRunlength)
 	ON_COMMAND(ID_ENCODE_SHIVERING, &CImage_ProcessingView::OnEncodeShivering)
 	ON_COMMAND(ID_ENCODE_BLOCK_CUT, &CImage_ProcessingView::OnEncodeBlockCut)
-		ON_COMMAND(ID_ENCODE_ENCLOSING, &CImage_ProcessingView::OnEncodeEnclosing)
-		END_MESSAGE_MAP()
+	ON_COMMAND(ID_ENCODE_ENCLOSING, &CImage_ProcessingView::OnEncodeEnclosing)
+END_MESSAGE_MAP()
 
 // CImage_ProcessingView 构造/析构
 
@@ -7982,10 +7982,10 @@ void CImage_ProcessingView::OnEncodeShivering()
 void CImage_ProcessingView::OnEncodeBlockCut()
 {
 	// TODO: 在此添加命令处理程序代码
-	
+
 	//现在因为之前做的撤销返回那个只做了值，没考虑isgrayed，所以这个时候逻辑会有一点问题，就别用撤销功能了
-	CDlgChooseParam *dlg = new CDlgChooseParam(this, _T("块截止编码块大小"), _T("块大小:"),4);
-	if (dlg->DoModal()==IDCANCEL)
+	CDlgChooseParam *dlg = new CDlgChooseParam(this, _T("块截止编码块大小"), _T("块大小:"), 4);
+	if (dlg->DoModal() == IDCANCEL)
 	{
 		return;
 	}
@@ -8002,7 +8002,7 @@ void CImage_ProcessingView::OnEncodeBlockCut()
 	if (m_ImageAfter.IsNull())
 		m_Image.CopyTo(m_ImageAfter);
 
-	
+
 	PaddingImage(m_ImageAfter, m_ImageAfter, 0, nBlockSize);
 	OnTogray();
 
@@ -8011,7 +8011,7 @@ void CImage_ProcessingView::OnEncodeBlockCut()
 
 	double nAvgAll = 0.0, nAvgGT, nAvgLT;
 	int nCountGT, nCountLT;
-	
+
 	MyImage_ imgBit(m_ImageAfter.GetWidth(), m_ImageAfter.GetHeight(), 0);
 	for (int i = 0; i != nYBlockNum; ++i)
 	{
@@ -8094,6 +8094,7 @@ void CImage_ProcessingView::OnEncodeBlockCut()
 void CImage_ProcessingView::OnEncodeEnclosing()
 {
 	// TODO: 在此添加命令处理程序代码
+	//要求，原图长宽一致，并且长宽为2^n次方
 
 	if (m_Image.IsNull())
 		return;
@@ -8101,8 +8102,154 @@ void CImage_ProcessingView::OnEncodeEnclosing()
 	if (m_ImageAfter.IsNull())
 		m_Image.CopyTo(m_ImageAfter);
 
+	int nBlockSize = 2;
+
+	int nXBlockNum = m_ImageAfter.GetWidth() / nBlockSize;
+	int nYBlockNum = m_ImageAfter.GetHeight() / nBlockSize;
 
 	//PaddingImage(m_ImageAfter, m_ImageAfter, 0, nBlockSize);
 	OnTogray();
-	CMyImage_double dImg
+	CMyImage_double dImg(m_ImageAfter);
+	int nStep = 1;
+	double nAvg = 0.0;
+	int nLoopTime = log2(m_ImageAfter.GetWidth());
+
+	//for (int i = 0; i != m_ImageAfter.GetHeight(); ++i)
+	//{
+	//	for (int j = 0; j != m_ImageAfter.GetWidth(); ++j)
+	//	{
+	//		cout << (int)m_ImageAfter.m_pBits[0][i][j] << "\t";
+	//		nAvg += (int)m_ImageAfter.m_pBits[0][i][j];
+	//	}
+	//	cout << endl;
+	//}
+	//nAvg /= (16 * 16);
+	//cout << nAvg;
+
+	for (int k = 0; k != nLoopTime; ++k, nStep *= 2, nXBlockNum /= 2, nYBlockNum /= 2, nBlockSize *= 2)
+	{
+		for (int i = 0; i != nYBlockNum; ++i)
+		{
+			for (int j = 0; j != nXBlockNum; ++j)
+			{
+				nAvg = 0.0;
+				//求得每一个块的均值，通过step来控制选取的位置
+				for (int i1 = i*nBlockSize; i1 != (i + 1)*nBlockSize; i1 += nStep)
+				{
+					for (int j1 = j*nBlockSize; j1 != (j + 1)*nBlockSize; j1 += nStep)
+					{
+						nAvg += dImg.m_pBits[0][i1][j1];
+					}
+				}
+				nAvg /= 4.0;
+				for (int i1 = i*nBlockSize; i1 != (i + 1)*nBlockSize; i1 += nStep)
+				{
+					for (int j1 = j*nBlockSize; j1 != (j + 1)*nBlockSize; j1 += nStep)
+					{
+						if (i1 == i*nBlockSize && j1 == j*nBlockSize)
+						{
+							dImg.m_pBits[0][i1][j1] = nAvg;
+							continue;
+						}
+						dImg.m_pBits[0][i1][j1] -= nAvg;
+					}
+				}
+			}
+		}
+
+
+
+		//cout << endl;
+		//for (int i = 0; i != m_ImageAfter.GetHeight(); ++i)
+		//{
+		//	for (int j = 0; j != m_ImageAfter.GetWidth(); ++j)
+		//	{
+		//		cout << dImg.m_pBits[0][i][j] << "\t";
+		//	}
+		//	cout << endl;
+		//}
+
+	}
+	//cout << nBlockSize << "," << nXBlockNum << "," << nStep;
+	//for (int i=0;i!=m_ImageAfter.GetHeight();++i)
+	//{
+	//	for (int j=0;j!=m_ImageAfter.GetWidth();++j)
+	//	{
+	//		cout << (int)m_ImageAfter.m_pBits[0][i][j] << "\t";
+	//	}
+	//	cout << endl;
+	//}
+
+	//for (int i = 0; i != m_ImageAfter.GetHeight(); ++i)
+	//{
+	//	for (int j = 0; j != m_ImageAfter.GetWidth(); ++j)
+	//	{
+	//		cout << dImg.m_pBits[0][i][j] << "\t";
+	//	}
+	//	cout << endl;
+	//}
+
+	//这之后dImg里面存的就都是均值和差值了(0,0像素存的是最终全图的均值)
+	//先分配nLoopTime张图,作为分别的渐进显示
+	vector<MyImage_> imgEnclosings;
+	for (int i = 0; i != nLoopTime; ++i)
+	{
+		MyImage_ imgTemp(dImg.m_nWidth, dImg.m_nWidth, 0);
+		imgEnclosings.push_back(imgTemp);
+	}
+
+	//逆向循环一次,显示出所有的渐进图像
+	nStep = m_nWidth / 2;
+	nBlockSize = m_nWidth / 2;
+	nXBlockNum = 2;
+	nYBlockNum = 2;
+
+	for (int l = 0; l != nLoopTime; ++l, nStep /= 2, nBlockSize /= 2, nXBlockNum *= 2, nYBlockNum *= 2)
+	{
+		if (l == 0)
+		{
+			imgEnclosings[l].Create(m_nWidth, m_nHeight, dImg.m_pBits[0][0][0]);
+			continue;
+		}
+
+		//1.先向上赋值四个点变大的
+		//2.再把赋值后的点向周围复制即可，就是遍历图像块一样的了
+		// 
+		for (int i = 0; i != nYBlockNum; ++i)
+		{
+			for (int j = 0; j != nXBlockNum; ++j)
+			{
+
+				if (i!=0 && j!=0)
+				{
+					dImg.m_pBits[0][i*nBlockSize][j*nBlockSize] += dImg.m_pBits[0][0][0];
+				}
+
+			}
+
+		}
+
+
+	}
+
+
+	return;
+
+}
+
+
+void CImage_ProcessingView::function(MyImage_ &img,int  nBlockSize,int xPos,int yPos)
+{
+	//这里要找一个返回条件
+	if (nBlockSize==2)
+	{
+		return;
+	}
+	img.m_pBits[0][nBlockSize*yPos + nBlockSize][nBlockSize*xPos] =
+		img.m_pBits[0][nBlockSize*yPos + nBlockSize][nBlockSize*xPos + nBlockSize] =
+		img.m_pBits[0][nBlockSize*yPos][nBlockSize*xPos + nBlockSize]
+		= img.m_pBits[0][nBlockSize*yPos][nBlockSize*xPos];
+	function(img, nBlockSize / 2, nBlockSize*yPos + nBlockSize, nBlockSize*xPos + nBlockSize);
+	function(img, nBlockSize / 2, nBlockSize*yPos, nBlockSize*xPos + nBlockSize);
+	function(img, nBlockSize / 2, nBlockSize*yPos + nBlockSize, nBlockSize*xPos);
 }
