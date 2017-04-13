@@ -132,6 +132,9 @@
     <ClInclude Include="HuffmanCoding.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="DlgChooseParam.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Image_Processing.cpp">
@@ -222,6 +225,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="HuffmanCoding.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="DlgChooseParam.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

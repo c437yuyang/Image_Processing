@@ -7981,15 +7981,27 @@ void CImage_ProcessingView::OnEncodeShivering()
 void CImage_ProcessingView::OnEncodeBlockCut()
 {
 	// TODO: 在此添加命令处理程序代码
-	// TODO: 在此添加命令处理程序代码
+	
+	//现在因为之前做的撤销返回那个只做了值，没考虑isgrayed，所以这个时候逻辑会有一点问题，就别用撤销功能了
+	CDlgChooseParam *dlg = new CDlgChooseParam(this, _T("块截止编码块大小"), _T("块大小:"),4);
+	if (dlg->DoModal()==IDCANCEL)
+	{
+		return;
+	}
+	int nBlockSize = (int)dlg->m_dParam1;
+	if (nBlockSize < 2)
+	{
+		AfxMessageBox(_T("块大小至少为2x2!"));
+		return;
+	}
+
 	if (m_Image.IsNull())
 		return;
 
 	if (m_ImageAfter.IsNull())
 		m_Image.CopyTo(m_ImageAfter);
 
-
-	int nBlockSize = 2;
+	
 	PaddingImage(m_ImageAfter, m_ImageAfter, 0, nBlockSize);
 	OnTogray();
 
@@ -8074,7 +8086,5 @@ void CImage_ProcessingView::OnEncodeBlockCut()
 	pDlg->Create(IDD_DLG_SHOW_IMG, this);
 	pDlg->ShowWindow(SW_SHOW);
 	return;
-
-
 
 }

@@ -189,6 +189,7 @@
     <ClInclude Include="Canny.h" />
     <ClInclude Include="Common.h" />
     <ClInclude Include="DlgCannyThresh.h" />
+    <ClInclude Include="DlgChooseParam.h" />
     <ClInclude Include="DlgFilterAVG.h" />
     <ClInclude Include="DlgFilterHPFSet.h" />
     <ClInclude Include="DlgFilterLPFSet.h" />
@@ -223,6 +224,7 @@
     <ClCompile Include="Canny.cpp" />
     <ClCompile Include="Common.cpp" />
     <ClCompile Include="DlgCannyThresh.cpp" />
+    <ClCompile Include="DlgChooseParam.cpp" />
     <ClCompile Include="DlgFilterAVG.cpp" />
     <ClCompile Include="DlgFilterHPFSet.cpp" />
     <ClCompile Include="DlgFilterLPFSet.cpp" />

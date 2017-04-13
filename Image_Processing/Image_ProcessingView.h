@@ -15,6 +15,7 @@
 #include "DlgCannyThresh.h"
 #include "DlgThresh.h"
 #include "DlgFilterTplSet.h"
+#include "DlgChooseParam.h"
 
 #include "PropSheetRGB.h"
 #include "Common.h"
@@ -169,6 +170,8 @@ public:
 	CPoint m_ptDrawOrigin;
 	CRect m_rectDraw;
 	bool m_bIsDrawing;
+
+	double m_dParam1; //选择参数对话框相关
 
 	afx_msg void OnDrawline();
 	afx_msg void OnFileSaveAs();
