@@ -190,8 +190,8 @@ BEGIN_MESSAGE_MAP(CImage_ProcessingView, CScrollView)
 	ON_COMMAND(ID_ENCODE_SHIVERING, &CImage_ProcessingView::OnEncodeShivering)
 	ON_COMMAND(ID_ENCODE_BLOCK_CUT, &CImage_ProcessingView::OnEncodeBlockCut)
 	ON_COMMAND(ID_ENCODE_ENCLOSING, &CImage_ProcessingView::OnEncodeEnclosing)
-		ON_COMMAND(ID_CLOSE_CHILDS, &CImage_ProcessingView::OnCloseChilds)
-		END_MESSAGE_MAP()
+	ON_COMMAND(ID_CLOSE_CHILDS, &CImage_ProcessingView::OnCloseChilds)
+END_MESSAGE_MAP()
 
 // CImage_ProcessingView 构造/析构
 
@@ -5975,7 +5975,7 @@ void CImage_ProcessingView::Ontest1()
 	//UpdateState();
 
 
-	for (auto it=m_vecDlgs.begin();it!=m_vecDlgs.end();++it)
+	for (auto it = m_vecDlgs.begin(); it != m_vecDlgs.end(); ++it)
 	{
 		(*it)->DestroyWindow();
 	}
@@ -8134,13 +8134,30 @@ void CImage_ProcessingView::OnEncodeEnclosing()
 	if (m_ImageAfter.IsNull())
 		m_Image.CopyTo(m_ImageAfter);
 
+	//这里采取的方式是把小的边插值为2的次方，大的边跟着变
+	int minus = (m_nWidth > m_nHeight ? m_nHeight : m_nWidth);
+
+	int w = 2;
+	while (w < minus)
+	{
+		w *= 2;
+	}
+
+	//判断高宽是不是有一个不相等，则需要进行插值
+
+	if (w != m_nWidth || w != m_nHeight)
+	{
+		MyImage_ imgTemp(m_ImageAfter);
+		PaddingImageByInterPolate(imgTemp, m_ImageAfter, w, w);
+	}
+	//PaddingImage(m_ImageAfter, m_ImageAfter, 0, nBlockSize);
+	OnTogray();
+
+
 	int nBlockSize = 2;
 
 	int nXBlockNum = m_ImageAfter.GetWidth() / nBlockSize;
 	int nYBlockNum = m_ImageAfter.GetHeight() / nBlockSize;
-
-	//PaddingImage(m_ImageAfter, m_ImageAfter, 0, nBlockSize);
-	OnTogray();
 	CMyImage_double dImg(m_ImageAfter);
 
 	int nStep = 1;
@@ -8229,7 +8246,7 @@ void CImage_ProcessingView::OnEncodeEnclosing()
 	nXBlockNum = 1;
 	nYBlockNum = 1;
 
-	for (int l = 0; l != nLoopTime+1; ++l, nStep /= 2, nBlockSize /= 2, nXBlockNum *= 2, nYBlockNum *= 2)
+	for (int l = 0; l != nLoopTime + 1; ++l, nStep /= 2, nBlockSize /= 2, nXBlockNum *= 2, nYBlockNum *= 2)
 	{
 		//cout << nXBlockNum << endl;
 		CMyImage_double imgTempd;
@@ -8251,7 +8268,7 @@ void CImage_ProcessingView::OnEncodeEnclosing()
 		//1.先向上赋值四个点变大的
 		//2.再把赋值后的点向周围复制即可，就是遍历图像块一样的了
 		dImg.CopyTo(imgTempd);
-		function(imgTempd, nBlockSize, 0, 0, nBlockSize / 2);
+		RetriveImageByDif(imgTempd, nBlockSize, 0, 0, nBlockSize / 2);
 
 		for (int i = 0; i != nYBlockNum; ++i)
 		{
@@ -8292,7 +8309,7 @@ void CImage_ProcessingView::OnEncodeEnclosing()
 }
 
 //递归按照差分数据恢复原始图像
-void CImage_ProcessingView::function(CMyImage_double &img, int  nBlockSize, int xPos, int yPos, int stopSize)
+void CImage_ProcessingView::RetriveImageByDif(CMyImage_double &img, int  nBlockSize, int xPos, int yPos, int stopSize)
 {
 	//这里要找一个返回条件
 	if (nBlockSize == stopSize || nBlockSize == 1)
@@ -8331,9 +8348,21 @@ void CImage_ProcessingView::function(CMyImage_double &img, int  nBlockSize, int 
 	img.m_pBits[2][yPos + nBlockSize][xPos + nBlockSize]
 		= img.m_pBits[0][yPos + nBlockSize][xPos + nBlockSize];
 
-	function(img, nBlockSize / 2, yPos, xPos + nBlockSize, nBlockSize / 4);
-	function(img, nBlockSize / 2, yPos + nBlockSize, xPos + nBlockSize, nBlockSize / 4);
-	function(img, nBlockSize / 2, yPos + nBlockSize, xPos + nBlockSize, nBlockSize / 4);
+	RetriveImageByDif(img, nBlockSize / 2, yPos, xPos + nBlockSize, nBlockSize / 4);
+	RetriveImageByDif(img, nBlockSize / 2, yPos + nBlockSize, xPos + nBlockSize, nBlockSize / 4);
+	RetriveImageByDif(img, nBlockSize / 2, yPos + nBlockSize, xPos + nBlockSize, nBlockSize / 4);
+}
+
+//支持in-place
+void CImage_ProcessingView::PaddingImageByInterPolate(const MyImage_ & srcImg, MyImage_ & dstImg, int width, int height)
+{
+	if (srcImg.IsNull())
+		return;
+
+	MyImage_ imgTemp(width, height, 0);
+
+	m_com.PicZoom_ThreeOrder0(imgTemp, srcImg);
+	imgTemp.CopyTo(dstImg);
 }
 
 void CImage_ProcessingView::OnCloseChilds()
@@ -8349,5 +8378,6 @@ void CImage_ProcessingView::OnCloseChilds()
 	}
 
 
-
 }
+
+

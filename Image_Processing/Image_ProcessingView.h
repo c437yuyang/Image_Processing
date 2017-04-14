@@ -215,8 +215,9 @@ private:
 	void doMorphDilate(const MyImage_ &srcImg,MyImage_ &dstImg,int nSize);
 	void doMorphErode(const MyImage_ &srcImg,MyImage_ &dstImg,int nSize);
 
-	void PaddingImage(const MyImage_ &srcImg, MyImage_ &dstImg, COLORREF color,int pads); //图像右下角填充指定颜色
-	void CImage_ProcessingView::function(CMyImage_double &img, int  nBlockSize, int xPos, int yPos,int stopSize);
+	void PaddingImage(const MyImage_ &srcImg, MyImage_ &dstImg, COLORREF color,int pads); //图像右下角填充指定颜色，扩充到pads的倍数大小
+	void CImage_ProcessingView::RetriveImageByDif(CMyImage_double &img, int  nBlockSize, int xPos, int yPos,int stopSize);//用于渐进编码里面的从均值和差值恢复的时候
+	void PaddingImageByInterPolate(const MyImage_ &srcImg, MyImage_ &dstImg,int width,int height);
 public:
 	afx_msg void OnReverse();
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
