@@ -3,7 +3,7 @@
 
 #include "MyImage_.h"
 
-
+//1.这个类只实现了MyImage到这个类的拷贝构造函数，没实现类自身到类自身的拷贝构造函数
 class CMyImage_double
 {
 public:

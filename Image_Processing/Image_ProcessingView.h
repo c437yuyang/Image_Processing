@@ -213,7 +213,7 @@ private:
 	void doMorphErode(const MyImage_ &srcImg,MyImage_ &dstImg,int nSize);
 
 	void PaddingImage(const MyImage_ &srcImg, MyImage_ &dstImg, COLORREF color,int pads); //图像右下角填充指定颜色
-	void CImage_ProcessingView::function(MyImage_ &img, int  nBlockSize, int xPos, int yPos);
+	void CImage_ProcessingView::function(CMyImage_double &img, int  nBlockSize, int xPos, int yPos,int stopSize);
 public:
 	afx_msg void OnReverse();
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
