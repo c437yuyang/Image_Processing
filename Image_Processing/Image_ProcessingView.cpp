@@ -190,7 +190,8 @@ BEGIN_MESSAGE_MAP(CImage_ProcessingView, CScrollView)
 	ON_COMMAND(ID_ENCODE_SHIVERING, &CImage_ProcessingView::OnEncodeShivering)
 	ON_COMMAND(ID_ENCODE_BLOCK_CUT, &CImage_ProcessingView::OnEncodeBlockCut)
 	ON_COMMAND(ID_ENCODE_ENCLOSING, &CImage_ProcessingView::OnEncodeEnclosing)
-END_MESSAGE_MAP()
+		ON_COMMAND(ID_CLOSE_CHILDS, &CImage_ProcessingView::OnCloseChilds)
+		END_MESSAGE_MAP()
 
 // CImage_ProcessingView 构造/析构
 
@@ -3808,6 +3809,7 @@ void CImage_ProcessingView::ShowImgInDlg(CString strWindowName)
 	pDlg->Create(IDD_DLG_SHOW_IMG, this);
 	pDlg->SetWindowTextW(strWindowName);
 	pDlg->ShowWindow(SW_SHOW);
+	m_vecDlgs.push_back(pDlg);
 }
 
 
@@ -5957,20 +5959,27 @@ void CImage_ProcessingView::Ontest1()
 	//UpdateState();
 	// 
 
-	if (m_Image.IsNull())
-		return;
+	//if (m_Image.IsNull())
+	//	return;
 
-	if (m_ImageAfter.IsNull())
-		m_Image.CopyTo(m_ImageAfter);
-	for (int i = 0; i != m_nHeight; ++i)
+	//if (m_ImageAfter.IsNull())
+	//	m_Image.CopyTo(m_ImageAfter);
+	//for (int i = 0; i != m_nHeight; ++i)
+	//{
+	//	for (int j = 0; j != m_nWidth; ++j)
+	//	{
+	//		m_ImageAfter.m_pBits[0][i][j] = 0;
+	//		m_ImageAfter.m_pBits[2][i][j] = 0;
+	//	}
+	//}
+	//UpdateState();
+
+
+	for (auto it=m_vecDlgs.begin();it!=m_vecDlgs.end();++it)
 	{
-		for (int j = 0; j != m_nWidth; ++j)
-		{
-			m_ImageAfter.m_pBits[0][i][j] = 0;
-			m_ImageAfter.m_pBits[2][i][j] = 0;
-		}
+		(*it)->DestroyWindow();
 	}
-	UpdateState();
+	m_vecDlgs.clear();
 
 }
 
@@ -7499,6 +7508,7 @@ void CImage_ProcessingView::OnEncodeHuffman()
 	CDlgShowImg *pDlg = new CDlgShowImg(_T("霍夫曼编码解码结果"));
 	pDlg->Create(IDD_DLG_SHOW_IMG, this);
 	pDlg->ShowWindow(SW_SHOW);
+	m_vecDlgs.push_back(pDlg);
 
 	UpdateState();
 
@@ -7646,7 +7656,7 @@ void CImage_ProcessingView::OnEncodeShannon()
 	CDlgShowImg *pDlg = new CDlgShowImg(_T("香农编码解码结果"));
 	pDlg->Create(IDD_DLG_SHOW_IMG, this);
 	pDlg->ShowWindow(SW_SHOW);
-
+	m_vecDlgs.push_back(pDlg);
 	ldTimeEnd = GetTickCount();
 	std::cout << "香农编码、解码完成，" << "耗时：" << (ldTimeEnd - ldTimeStart) / 1000 << "s" << endl;
 	//UpdateState(); //ontoGray里面已经updatestate了
@@ -7691,6 +7701,7 @@ void CImage_ProcessingView::OnEncodeBitPlane()
 		CDlgShowImg *pDlg = new CDlgShowImg(wndName);
 		pDlg->Create(IDD_DLG_SHOW_IMG, this);
 		pDlg->ShowWindow(SW_SHOW);
+		m_vecDlgs.push_back(pDlg);
 	}
 
 	//UpdateState(); //ontoGray里面已经updatestate了
@@ -7715,6 +7726,7 @@ void CImage_ProcessingView::OnEncodeHuffman2()
 	CDlgShowImg *pDlg = new CDlgShowImg(_T("霍夫曼编码解码结果"));
 	pDlg->Create(IDD_DLG_SHOW_IMG, this);
 	pDlg->ShowWindow(SW_SHOW);
+	m_vecDlgs.push_back(pDlg);
 	//UpdateState(); //ontoGray里面已经updatestate了
 
 }
@@ -7790,6 +7802,7 @@ void CImage_ProcessingView::OnEncodeRunlength()
 	CDlgShowImg *pDlg = new CDlgShowImg(_T("游程编码解码结果"));
 	pDlg->Create(IDD_DLG_SHOW_IMG, this);
 	pDlg->ShowWindow(SW_SHOW);
+	m_vecDlgs.push_back(pDlg);
 	UpdateState();
 	return;
 
@@ -7960,8 +7973,9 @@ void CImage_ProcessingView::OnEncodeShivering()
 	MyImage_ imgTemp;
 	PaddingImage(m_ImageAfter, m_ImageAfter, 0, 16);
 
-	UpdateState();
-	return;
+	//UpdateState();
+	//return;
+	// 
 	//之后进行编码
 
 	m_ImageToDlgShow.Create(m_ImageAfter.GetWidth(), m_ImageAfter.GetHeight(), 0);
@@ -7988,6 +8002,7 @@ void CImage_ProcessingView::OnEncodeShivering()
 	CDlgShowImg *pDlg = new CDlgShowImg(_T("抖动编码结果"));
 	pDlg->Create(IDD_DLG_SHOW_IMG, this);
 	pDlg->ShowWindow(SW_SHOW);
+	m_vecDlgs.push_back(pDlg);
 
 
 }
@@ -8102,6 +8117,7 @@ void CImage_ProcessingView::OnEncodeBlockCut()
 	CDlgShowImg *pDlg = new CDlgShowImg(_T("块截止编码结果"));
 	pDlg->Create(IDD_DLG_SHOW_IMG, this);
 	pDlg->ShowWindow(SW_SHOW);
+	m_vecDlgs.push_back(pDlg);
 	return;
 
 }
@@ -8228,6 +8244,7 @@ void CImage_ProcessingView::OnEncodeEnclosing()
 			CDlgShowImg *pDlg = new CDlgShowImg(str);
 			pDlg->Create(IDD_DLG_SHOW_IMG, this);
 			pDlg->ShowWindow(SW_SHOW);
+			m_vecDlgs.push_back(pDlg);
 			continue;
 		}
 
@@ -8267,6 +8284,7 @@ void CImage_ProcessingView::OnEncodeEnclosing()
 		CDlgShowImg *pDlg = new CDlgShowImg(str);
 		pDlg->Create(IDD_DLG_SHOW_IMG, this);
 		pDlg->ShowWindow(SW_SHOW);
+		m_vecDlgs.push_back(pDlg);
 	}
 
 	return;
@@ -8316,4 +8334,20 @@ void CImage_ProcessingView::function(CMyImage_double &img, int  nBlockSize, int 
 	function(img, nBlockSize / 2, yPos, xPos + nBlockSize, nBlockSize / 4);
 	function(img, nBlockSize / 2, yPos + nBlockSize, xPos + nBlockSize, nBlockSize / 4);
 	function(img, nBlockSize / 2, yPos + nBlockSize, xPos + nBlockSize, nBlockSize / 4);
+}
+
+void CImage_ProcessingView::OnCloseChilds()
+{
+	// TODO: 在此添加命令处理程序代码
+	if (m_vecDlgs.size() != 0)
+	{
+		for (auto it = m_vecDlgs.begin(); it != m_vecDlgs.end(); ++it)
+		{
+			(*it)->DestroyWindow();
+		}
+		m_vecDlgs.clear();
+	}
+
+
+
 }

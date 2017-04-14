@@ -39,7 +39,7 @@
 #include<time.h>
 #include <memory>
 
-
+class CDlgShowImg;
 
 class CImage_ProcessingView : public CScrollView
 {
@@ -172,6 +172,9 @@ public:
 	bool m_bIsDrawing;
 
 	double m_dParam1; //选择参数对话框相关
+
+	vector<CDlgShowImg *> m_vecDlgs;
+	/*std::vector<CDlgShowImg *> m_vecDlgs;*/
 
 	afx_msg void OnDrawline();
 	afx_msg void OnFileSaveAs();
@@ -337,6 +340,7 @@ public:
 	afx_msg void OnEncodeShivering();
 	afx_msg void OnEncodeBlockCut();
 	afx_msg void OnEncodeEnclosing();
+	afx_msg void OnCloseChilds();
 };
 
 #ifndef _DEBUG  // Image_ProcessingView.cpp 中的调试版本

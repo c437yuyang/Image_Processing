@@ -22,8 +22,11 @@ CDlgShowImg::CDlgShowImg(CString WndName,CWnd* pParent /*=NULL*/)
 
 }
 
+//自己手动关闭窗口,既不会触发PostNcDestroy，也不会调用析构函数
 CDlgShowImg::~CDlgShowImg()
 {
+	m_ImageToShow.Destroy();
+	//cout << "析构" << endl;
 }
 
 void CDlgShowImg::DoDataExchange(CDataExchange* pDX)
@@ -35,6 +38,7 @@ void CDlgShowImg::DoDataExchange(CDataExchange* pDX)
 BEGIN_MESSAGE_MAP(CDlgShowImg, CDialogEx)
 	ON_WM_PAINT()
 	ON_WM_CREATE()
+	ON_WM_CLOSE()
 END_MESSAGE_MAP()
 
 
@@ -66,7 +70,7 @@ int CDlgShowImg::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	return 0;
 }
 
-
+//自己手动关闭窗口,既不会触发PostNcDestroy，也不会调用析构函数
 void CDlgShowImg::PostNcDestroy()
 {
 	// TODO: Add your specialized code here and/or call the base class
@@ -83,4 +87,15 @@ BOOL CDlgShowImg::OnInitDialog()
 	this->SetWindowTextW(m_strWndName);
 	return TRUE;  // return TRUE unless you set the focus to a control
 				  // 异常: OCX 属性页应返回 FALSE
+}
+
+//
+void CDlgShowImg::OnClose()
+{
+	// TODO: 在此添加消息处理程序代码和/或调用默认值
+	//cout << "onclose" << endl;
+	this->m_ImageToShow.Destroy();
+	/*delete this;*/ //会报错
+
+	CDialogEx::OnClose();
 }

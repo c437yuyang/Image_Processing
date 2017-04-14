@@ -28,4 +28,5 @@ public:
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	virtual void PostNcDestroy();
 	virtual BOOL OnInitDialog();
+	afx_msg void OnClose();
 };
