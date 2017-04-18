@@ -53,7 +53,7 @@ template<class T> //自定义溢出处理函数
 T SaturateCast(T value, const T minT = 0, const T maxT = 255);
 
 template <class T>//自定义归一化函数
-void VecNormalized(vector<T> &vecT, T normMin, T normMax);
+void VecNormalize(vector<T> &vecT, T normMin, T normMax);
 
 
 int GetDistance(int R, int G, int B, int RTaget, int GTaget, int BTaget);//自定义计算像素颜色距离函数
@@ -191,8 +191,8 @@ BEGIN_MESSAGE_MAP(CImage_ProcessingView, CScrollView)
 	ON_COMMAND(ID_ENCODE_BLOCK_CUT, &CImage_ProcessingView::OnEncodeBlockCut)
 	ON_COMMAND(ID_ENCODE_ENCLOSING, &CImage_ProcessingView::OnEncodeEnclosing)
 	ON_COMMAND(ID_CLOSE_CHILDS, &CImage_ProcessingView::OnCloseChilds)
-		ON_COMMAND(ID_ENCODE_DCT, &CImage_ProcessingView::OnEncodeDct)
-		END_MESSAGE_MAP()
+	ON_COMMAND(ID_ENCODE_DCT, &CImage_ProcessingView::OnEncodeDct)
+END_MESSAGE_MAP()
 
 // CImage_ProcessingView 构造/析构
 
@@ -2724,7 +2724,7 @@ void CImage_ProcessingView::OnFft()
 	//	*it = ((*it)-dMin)/(dMax-dMin)*255;
 	//}
 
-	VecNormalized(dVecMag, 0.0, 255.0);
+	VecNormalize(dVecMag, 0.0, 255.0);
 
 	for (int i = 0; i < h_extend; i++) //显示幅度谱
 	{
@@ -2740,8 +2740,7 @@ void CImage_ProcessingView::OnFft()
 	delete pTD; //一定要去掉，不然多占几十兆内存
 	delete pFD;
 
-	m_ImageFT.CopyTo(m_ImageToDlgShow);
-	ShowImgInDlg(_T("傅里叶频谱："));
+	ShowImgInDlg(_T("傅里叶频谱："), m_ImageFT);
 
 	m_bIsFFTed = true;
 	ChangeScrollSize();
@@ -3804,8 +3803,9 @@ void CImage_ProcessingView::OnFilterHpfSet()
 }
 
 
-void CImage_ProcessingView::ShowImgInDlg(CString strWindowName)
+void CImage_ProcessingView::ShowImgInDlg(CString strWindowName,const MyImage_ &srcImg)
 {
+	srcImg.CopyTo(m_ImageToDlgShow);
 	CDlgShowImg *pDlg = new CDlgShowImg(strWindowName);
 	pDlg->Create(IDD_DLG_SHOW_IMG, this);
 	pDlg->SetWindowTextW(strWindowName);
@@ -4911,7 +4911,7 @@ void CImage_ProcessingView::OnShowH()
 		}
 	}
 
-	VecNormalized(nVecHValue, 0, 255);//写成CCommon类成员函数要报unresoloved external错误
+	VecNormalize(nVecHValue, 0, 255);//写成CCommon类成员函数要报unresoloved external错误
 
 	for (UINT i = 0; i < m_nHeight; i++) //显示幅度谱
 	{
@@ -4950,7 +4950,7 @@ void CImage_ProcessingView::OnShowS()
 		}
 	}
 
-	VecNormalized(nVecSValue, 0, 255);//写成CCommon类成员函数要报unresoloved external错误
+	VecNormalize(nVecSValue, 0, 255);//写成CCommon类成员函数要报unresoloved external错误
 
 	for (UINT i = 0; i < m_nHeight; i++) //显示幅度谱
 	{
@@ -4986,7 +4986,7 @@ void CImage_ProcessingView::OnShowI()
 		}
 	}
 
-	VecNormalized(nVecIValue, 0, 255);//写成CCommon类成员函数要报unresoloved external错误
+	VecNormalize(nVecIValue, 0, 255);//写成CCommon类成员函数要报unresoloved external错误
 
 	for (UINT i = 0; i < m_nHeight; i++) //显示幅度谱
 	{
@@ -5002,7 +5002,7 @@ void CImage_ProcessingView::OnShowI()
 }
 
 template <class T>
-void VecNormalized(vector<T> &vecT, T normMin, T normMax)
+void VecNormalize(vector<T> &vecT, T normMin, T normMax)
 {
 	vector<T> temp(vecT.begin(), vecT.end());
 	sort(temp.begin(), temp.end());
@@ -5710,7 +5710,7 @@ void CImage_ProcessingView::OnFilterGradientAngle()
 	}
 
 
-	VecNormalized(dVecAngle, 0.0, 100.0);
+	VecNormalize(dVecAngle, 0.0, 100.0);
 
 	for (int i = 0; i != m_nHeight; ++i)
 	{
@@ -5953,7 +5953,7 @@ void CImage_ProcessingView::Ontest1()
 	//		cout << (int)m_Image.m_pBits[0][i][j] << "\t";
 	//	}
 	//}
-	
+
 	DCT dct;
 	int nBlockSize = 8;
 	double *pDctMat = new double[nBlockSize*nBlockSize]();
@@ -5969,10 +5969,10 @@ void CImage_ProcessingView::Ontest1()
 							,41,63, 4,61,63,68,89,24 };
 
 	double pDCTData[64];
-	double pIDCTData[64]; 
+	double pIDCTData[64];
 	dct.doDCTTransform(pDctMat, pBlockData, pDCTData, nBlockSize);
-	dct.doIDCTTransform(pDctMat,pDCTData, pIDCTData, nBlockSize);
-	delete []pDctMat;
+	dct.doIDCTTransform(pDctMat, pDCTData, pIDCTData, nBlockSize);
+	delete[]pDctMat;
 	pDctMat = nullptr;
 }
 
@@ -8014,6 +8014,8 @@ void CImage_ProcessingView::OnEncodeBlockCut()
 		return;
 	}
 	int nBlockSize = (int)dlg->m_dParam1;
+	delete dlg;
+
 	if (nBlockSize < 2)
 	{
 		AfxMessageBox(_T("块大小至少为2x2!"));
@@ -8146,7 +8148,6 @@ void CImage_ProcessingView::OnEncodeEnclosing()
 	OnTogray();
 
 	int nBlockSize = 2;
-
 	int nXBlockNum = m_ImageAfter.GetWidth() / nBlockSize;
 	int nYBlockNum = m_ImageAfter.GetHeight() / nBlockSize;
 	CMyImage_double dImg(m_ImageAfter);
@@ -8384,10 +8385,23 @@ void CImage_ProcessingView::OnEncodeDct()
 	if (m_ImageAfter.IsNull())
 		m_Image.CopyTo(m_ImageAfter);
 
+	CDlgChooseParam *dlg = new CDlgChooseParam(this, _T("DCT变换块大小"), _T("块大小:"), 8);
+	if (dlg->DoModal() == IDCANCEL)
+		return;
+	
+	const int nBlockSize = (int)dlg->m_dParam1;
+	delete dlg; //一定要delete
+
+	//是2的幂次且大于4小于宽度高度
+	if (!(nBlockSize >= 4 && (nBlockSize&(nBlockSize - 1)) == 0 && nBlockSize < m_nWidth && nBlockSize < m_nHeight))
+	{
+		AfxMessageBox(_T("参数必须是2的幂次且大于等于4!"));
+		return;
+	}
+
 	//生成DCT矩阵
 	DCT dct;
-	const int nBlockSize = 8;
-	double *pMatDCT = new double[nBlockSize*nBlockSize](); 
+	double *pMatDCT = new double[nBlockSize*nBlockSize]();
 	dct.GenerateDCTMat(pMatDCT, nBlockSize);
 
 	//图像先填充
@@ -8397,35 +8411,77 @@ void CImage_ProcessingView::OnEncodeDct()
 	int nXBlockNum = m_ImageAfter.GetWidth() / nBlockSize;
 	int nYBlockNum = m_ImageAfter.GetHeight() / nBlockSize;
 
-	
-	vector<double*> vecDCTBlocks;
 
+	vector<double*> vecDCTBlocks;
+	//double pBlock[nBlockSize*nBlockSize]; //这里在栈上分配会快一些
 	//遍历每一个块执行DCT变换
 	for (int i = 0; i != nYBlockNum; ++i)
 	{
 		for (int j = 0; j != nXBlockNum; ++j)
 		{
-			double *pBlock = new double[nBlockSize*nBlockSize]();
+			double *pBlock = new double[nBlockSize*nBlockSize](); //改为在栈上分配不行,参数不是const的了
 			double *pDCTData = new double[nBlockSize*nBlockSize]();
-			for (int i1 = i*nBlockSize; i1 != (i + 1)*nBlockSize; ++i1)
+			//先把值装入每一个块中
+			int x = 0, y = 0;
+			for (int i1 = i*nBlockSize; i1 != (i + 1)*nBlockSize; ++i1,++y,x=0)
 			{
-				for (int j1 = j*nBlockSize; j1 != (j + 1)*nBlockSize; ++j1)
+				for (int j1 = j*nBlockSize; j1 != (j + 1)*nBlockSize; ++j1,++x)
 				{
-					/*nAvgAll += m_ImageAfter.m_pBits[0][i1][j1];*/
-					//先把值装入每一个块中
-					pBlock[i*nBlockSize + j] = (double)m_ImageAfter.m_pBits[0][i1][j1];
-
+					pBlock[y*nBlockSize + x] = (double)m_ImageAfter.m_pBits[0][i1][j1];
 				}
 			}
 			//然后对这个块执行DCT变换，再装到vecDCTBlocks里面
-          	dct.doDCTTransform(pMatDCT, pBlock, pDCTData, nBlockSize);
+			dct.doDCTTransform(pMatDCT, pBlock, pDCTData, nBlockSize);
 			vecDCTBlocks.push_back(pDCTData); //注意，这里pDCTData指针离开作用域就都失效了，但是内存并没有删掉，唯一能访问到的办法是vec里面
 			delete[] pBlock;
 			pBlock = NULL;
 		}
 	}
 
-	//现在vecDCTBlocks里面存的就是所有小块的DCT数据了
+	MyImage_ imgDCT(m_ImageAfter.GetWidth(),m_ImageAfter.GetHeight(),0); 
+
+	//现在vecDCTBlocks里面存的就是所有小块的DCT数据了,试着将DCT变换的数据显示出来
+	for (int i = 0; i != nYBlockNum; ++i)
+	{
+		for (int j = 0; j != nXBlockNum; ++j)
+		{
+			//对DCT变换的每一个块，归一化到0-255，用之前的VecNormalize()函数
+			double *pDCTBlock = vecDCTBlocks[i*nXBlockNum + j];
+			vector<double> vecTemp;
+			for (int i1=0;i1!=nBlockSize;++i1)
+			{
+				for (int j1=0;j1!=nBlockSize;++j1)
+				{
+					vecTemp.push_back(pDCTBlock[i1*nBlockSize + j1]);
+				}
+			}
+			VecNormalize(vecTemp, 0.0, 255.0);
+			int x = 0, y = 0;
+			for (int i1 = i*nBlockSize; i1 != (i + 1)*nBlockSize; ++i1, ++y, x = 0)
+			{
+				for (int j1 = j*nBlockSize; j1 != (j + 1)*nBlockSize; ++j1, ++x)
+				{
+					imgDCT.m_pBits[0][i1][j1] = (BYTE)vecTemp[y*nBlockSize+x];
+					imgDCT.m_pBits[1][i1][j1] = (BYTE)vecTemp[y*nBlockSize + x];
+					imgDCT.m_pBits[2][i1][j1] = (BYTE)vecTemp[y*nBlockSize + x];
+				}
+			}
+
+		}
+	}
 	
+	CString strWndName;
+	strWndName.Format(_T("分块DCT变换结果,块大小:%dx%d"), nBlockSize, nBlockSize);
+	ShowImgInDlg(strWndName,imgDCT);
+
+	//最后要删掉所有中间用到的内存
+	for (auto it=vecDCTBlocks.begin();it!=vecDCTBlocks.end();++it)
+	{
+		delete[] (*it);
+		*it = NULL;
+	}
+
+	delete[]pMatDCT;
+	pMatDCT = NULL;
 	return;
 }

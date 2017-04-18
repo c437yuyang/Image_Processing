@@ -41,3 +41,9 @@
 9.增加MyImage构造函数，拷贝构造函数
 10.改写赋值符号
 11.删除GetImage方法
+
+
+MyImage_类的问题:
+//MyImage这个类有先天缺陷，它的GetWidth是由CImage实现的，而CImage的作用仅仅是用来显示，中间运算的操作根本没有用到，如果一旦做了长宽变化的话，再来getWidth，getHeight就是错的，必须还要对Cimage进行修改，太麻烦
+
+修改成:有m_nHeight,和m_nWidth属性就行了，Cimage只负责显示，之前的结果之所以没受影响是因为我在写CopyTo的时候，重新创建了一下m_Cimage

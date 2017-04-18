@@ -279,7 +279,7 @@ public:
 	afx_msg void OnFilterIhpf();
 	afx_msg void OnFilterHpfSet();
 private:
-	void ShowImgInDlg(CString strWindowName);
+	void ShowImgInDlg(CString strWindowName,const MyImage_&);
 public:
 	afx_msg void OnFilterLpfSet();
 	afx_msg void OnFilterSort();

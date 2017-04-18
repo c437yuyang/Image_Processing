@@ -37,3 +37,8 @@ title('DCT±ä»»Í¼');
 subplot(1,3,3);
 imshow(uint8(X10));
 title('DCT·´±ä»»»Ö¸´Í¼');
+
+
+figure();
+imshow(uint8(Y));
+title('DCT±ä»»Í¼');
