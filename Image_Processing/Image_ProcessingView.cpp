@@ -182,7 +182,7 @@ BEGIN_MESSAGE_MAP(CImage_ProcessingView, CScrollView)
 	ON_COMMAND(ID_MORPH_BORDER_EXTRACT, &CImage_ProcessingView::OnMorphBorderExtract)
 	ON_COMMAND(ID_FILTER_MEDIUM_AUTOADAPTIVE, &CImage_ProcessingView::OnFilterMediumAutoadaptive)
 	ON_WM_HSCROLL()
-	ON_COMMAND(ID_ENCODE_HUFFMAN, &CImage_ProcessingView::OnEncodeHuffman)
+	ON_COMMAND(ID_ENCODE_HUFFMAN, &CImage_ProcessingView::OnEncodeHuffman2)
 	ON_COMMAND(ID_ENCODE_SHANNON, &CImage_ProcessingView::OnEncodeShannon)
 	ON_COMMAND(ID_ENCODE_BIT_PLANE, &CImage_ProcessingView::OnEncodeBitPlane)
 	ON_COMMAND(ID_ENCODE_HUFFMAN2, &CImage_ProcessingView::OnEncodeHuffman2)
@@ -5940,47 +5940,19 @@ void CImage_ProcessingView::OnCanny()
 
 void CImage_ProcessingView::Ontest1()
 {
-	// TODO: Add your command handler code here
-	//int b = (int)ceil(2.1);
+	//int *p1 = new int[10]();
 
-	//double p[3] = {1,2,3};
-
-	//vector<double> dVec(p,p+ARRAYSIZE(p)-1);
-
-	//for (auto it=dVec.begin();it!=dVec.end();++it)
+	//delete[] p1;
+	//p1 = NULL;
+	//int i = m_Image.GetWidth();
+	//for (int i = 0; i != 10; ++i)
 	//{
-	//	cout << *it << endl;
-	//}
-
-	//cout << b << endl;
-	//m_Image.CopyTo(m_ImageAfter);
-
-	//doToGray(m_ImageAfter, m_ImageAfter);
-	//UpdateState();
-	// 
-
-	//if (m_Image.IsNull())
-	//	return;
-
-	//if (m_ImageAfter.IsNull())
-	//	m_Image.CopyTo(m_ImageAfter);
-	//for (int i = 0; i != m_nHeight; ++i)
-	//{
-	//	for (int j = 0; j != m_nWidth; ++j)
+	//	for (int j = 0; j != 10; ++j)
 	//	{
-	//		m_ImageAfter.m_pBits[0][i][j] = 0;
-	//		m_ImageAfter.m_pBits[2][i][j] = 0;
+	//		cout << (int)m_Image.m_pBits[0][i][j] << "\t";
 	//	}
 	//}
-	//UpdateState();
-
-
-	for (auto it = m_vecDlgs.begin(); it != m_vecDlgs.end(); ++it)
-	{
-		(*it)->DestroyWindow();
-	}
-	m_vecDlgs.clear();
-
+	
 }
 
 
@@ -8150,9 +8122,7 @@ void CImage_ProcessingView::OnEncodeEnclosing()
 		MyImage_ imgTemp(m_ImageAfter);
 		PaddingImageByInterPolate(imgTemp, m_ImageAfter, w, w);
 	}
-	//PaddingImage(m_ImageAfter, m_ImageAfter, 0, nBlockSize);
 	OnTogray();
-
 
 	int nBlockSize = 2;
 
@@ -8283,6 +8253,7 @@ void CImage_ProcessingView::OnEncodeEnclosing()
 						imgTempd.m_pBits[0][i1][j1] = imgTempd.m_pBits[0][i*nBlockSize][j*nBlockSize];
 						imgTempd.m_pBits[1][i1][j1] = imgTempd.m_pBits[1][i*nBlockSize][j*nBlockSize];
 						imgTempd.m_pBits[2][i1][j1] = imgTempd.m_pBits[2][i*nBlockSize][j*nBlockSize];
+						/*imgTempd.m_pBits[0][i][j] = imgTempd.m_pBits[1][i][j];*/ //写在这里没用？不知道为啥了
 					}
 				}
 			}
