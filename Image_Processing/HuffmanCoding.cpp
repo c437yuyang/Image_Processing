@@ -33,7 +33,7 @@ int CHuffmanCoding::doHuffmanCoding(int *hist, int histLen,char ** dict,int *cod
 	}
 	NodeNum = 0;
 
-	int i, j, k, a, b;
+	int i, a, b;
 
 	for (i = 0; i < histLen; i++)
 	{//创建初始节点  

@@ -29,7 +29,7 @@ int CHuffman::Change2to10(int pos)
 
 //±£´æHuffman±àÂëÊ÷  
 int CHuffman::saveInfo(char *writePath, int lineByte) {
-	int i, j, k;
+	int i;
 
 	FILE *fout;
 	fout = fopen(writePath, "w");
@@ -51,7 +51,7 @@ Huffman±àÂëÍ¼Ïñ½âÂë
 //¶ÁÈë±àÂëÍ¼Ïñ  
 bool CHuffman::readHuffman(char *Name)
 {
-	int i, j;
+	int i;
 	char NameStr[100];
 	//¶ÁÈ¡Huffman±àÂëÐÅÏ¢ºÍ±àÂëÊ÷  
 	strcpy(NameStr, Name);
@@ -120,7 +120,7 @@ void CHuffman::HuffmanDecode()
 		tmp = *(pBmpBuf + i);
 		while (tmp > 0)
 		{
-			ImgInf[j] = tmp % 2;
+			ImgInf[j] = (bool)(tmp % 2);
 			tmp /= 2;
 			j--;
 		}

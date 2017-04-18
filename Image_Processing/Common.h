@@ -11,9 +11,9 @@ using std::complex;
 #include <iostream>
 #include "MyImage_.h"
 #include "MyImage_double.h"
-#define pi 3.1415926535898
-#define PI 3.1415926535898
-#define eps 0.000001
+//#define pi 3.1415926535898
+//#define PI 3.1415926535898
+//#define eps 0.000001
 typedef BYTE TUInt8;
 
 #define asm __asm

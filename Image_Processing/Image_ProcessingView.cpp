@@ -191,7 +191,8 @@ BEGIN_MESSAGE_MAP(CImage_ProcessingView, CScrollView)
 	ON_COMMAND(ID_ENCODE_BLOCK_CUT, &CImage_ProcessingView::OnEncodeBlockCut)
 	ON_COMMAND(ID_ENCODE_ENCLOSING, &CImage_ProcessingView::OnEncodeEnclosing)
 	ON_COMMAND(ID_CLOSE_CHILDS, &CImage_ProcessingView::OnCloseChilds)
-END_MESSAGE_MAP()
+		ON_COMMAND(ID_ENCODE_DCT, &CImage_ProcessingView::OnEncodeDct)
+		END_MESSAGE_MAP()
 
 // CImage_ProcessingView 构造/析构
 
@@ -5953,6 +5954,26 @@ void CImage_ProcessingView::Ontest1()
 	//	}
 	//}
 	
+	DCT dct;
+	int nBlockSize = 8;
+	double *pDctMat = new double[nBlockSize*nBlockSize]();
+	dct.GenerateDCTMat(pDctMat, nBlockSize);
+
+	double pBlockData[] = { 44,74,13, 3,61,72,70,27
+							,50,27,21,31, 2,69,73,25
+							,21,44,61, 1, 2, 8,48,87
+							,64,93,63,38,19,45,55,23
+							,32,68,37,68,59,44,12,80
+							,96,21,58, 9, 6,35,45,91
+							,73,84,45, 4,37,15,72,23
+							,41,63, 4,61,63,68,89,24 };
+
+	double pDCTData[64];
+	double pIDCTData[64]; 
+	dct.doDCTTransform(pDctMat, pBlockData, pDCTData, nBlockSize);
+	dct.doIDCTTransform(pDctMat,pDCTData, pIDCTData, nBlockSize);
+	delete []pDctMat;
+	pDctMat = nullptr;
 }
 
 
@@ -8352,3 +8373,59 @@ void CImage_ProcessingView::OnCloseChilds()
 }
 
 
+
+
+void CImage_ProcessingView::OnEncodeDct()
+{
+	// TODO: 在此添加命令处理程序代码
+	if (m_Image.IsNull())
+		return;
+
+	if (m_ImageAfter.IsNull())
+		m_Image.CopyTo(m_ImageAfter);
+
+	//生成DCT矩阵
+	DCT dct;
+	const int nBlockSize = 8;
+	double *pMatDCT = new double[nBlockSize*nBlockSize](); 
+	dct.GenerateDCTMat(pMatDCT, nBlockSize);
+
+	//图像先填充
+	PaddingImage(m_ImageAfter, m_ImageAfter, 0, nBlockSize);
+	OnTogray();
+
+	int nXBlockNum = m_ImageAfter.GetWidth() / nBlockSize;
+	int nYBlockNum = m_ImageAfter.GetHeight() / nBlockSize;
+
+	
+	vector<double*> vecDCTBlocks;
+
+	//遍历每一个块执行DCT变换
+	for (int i = 0; i != nYBlockNum; ++i)
+	{
+		for (int j = 0; j != nXBlockNum; ++j)
+		{
+			double *pBlock = new double[nBlockSize*nBlockSize]();
+			double *pDCTData = new double[nBlockSize*nBlockSize]();
+			for (int i1 = i*nBlockSize; i1 != (i + 1)*nBlockSize; ++i1)
+			{
+				for (int j1 = j*nBlockSize; j1 != (j + 1)*nBlockSize; ++j1)
+				{
+					/*nAvgAll += m_ImageAfter.m_pBits[0][i1][j1];*/
+					//先把值装入每一个块中
+					pBlock[i*nBlockSize + j] = (double)m_ImageAfter.m_pBits[0][i1][j1];
+
+				}
+			}
+			//然后对这个块执行DCT变换，再装到vecDCTBlocks里面
+          	dct.doDCTTransform(pMatDCT, pBlock, pDCTData, nBlockSize);
+			vecDCTBlocks.push_back(pDCTData); //注意，这里pDCTData指针离开作用域就都失效了，但是内存并没有删掉，唯一能访问到的办法是vec里面
+			delete[] pBlock;
+			pBlock = NULL;
+		}
+	}
+
+	//现在vecDCTBlocks里面存的就是所有小块的DCT数据了
+	
+	return;
+}
