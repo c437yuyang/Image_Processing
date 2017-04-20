@@ -138,6 +138,9 @@
     <ClInclude Include="DCT.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="ColorTransformer.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Image_Processing.cpp">
@@ -234,6 +237,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="DCT.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ColorTransformer.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

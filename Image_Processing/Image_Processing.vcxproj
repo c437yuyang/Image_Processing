@@ -187,6 +187,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Canny.h" />
+    <ClInclude Include="ColorTransformer.h" />
     <ClInclude Include="Common.h" />
     <ClInclude Include="DCT.h" />
     <ClInclude Include="DlgCannyThresh.h" />
@@ -223,6 +224,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Canny.cpp" />
+    <ClCompile Include="ColorTransformer.cpp" />
     <ClCompile Include="Common.cpp" />
     <ClCompile Include="DCT.cpp" />
     <ClCompile Include="DlgCannyThresh.cpp" />

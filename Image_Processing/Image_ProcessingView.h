@@ -28,6 +28,7 @@
 #include "MyHuffman.h"
 #include "HuffmanCoding.h"
 #include "DCT.h"
+#include "ColorTransformer.h"
 
 #include <cmath>
 #include <map>
@@ -344,6 +345,8 @@ public:
 	afx_msg void OnEncodeEnclosing();
 	afx_msg void OnCloseChilds();
 	afx_msg void OnEncodeDct();
+	afx_msg void OnEncodeDct2();
+	afx_msg void OnEncodeJpeg();
 };
 
 #ifndef _DEBUG  // Image_ProcessingView.cpp 中的调试版本

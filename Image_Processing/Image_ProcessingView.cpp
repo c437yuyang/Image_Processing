@@ -192,6 +192,8 @@ BEGIN_MESSAGE_MAP(CImage_ProcessingView, CScrollView)
 	ON_COMMAND(ID_ENCODE_ENCLOSING, &CImage_ProcessingView::OnEncodeEnclosing)
 	ON_COMMAND(ID_CLOSE_CHILDS, &CImage_ProcessingView::OnCloseChilds)
 	ON_COMMAND(ID_ENCODE_DCT, &CImage_ProcessingView::OnEncodeDct)
+	ON_COMMAND(ID_ENCODE_DCT_2, &CImage_ProcessingView::OnEncodeDct2)
+	ON_COMMAND(ID_ENCODE_JPEG, &CImage_ProcessingView::OnEncodeJpeg)
 END_MESSAGE_MAP()
 
 // CImage_ProcessingView 构造/析构
@@ -3803,7 +3805,7 @@ void CImage_ProcessingView::OnFilterHpfSet()
 }
 
 
-void CImage_ProcessingView::ShowImgInDlg(CString strWindowName,const MyImage_ &srcImg)
+void CImage_ProcessingView::ShowImgInDlg(CString strWindowName, const MyImage_ &srcImg)
 {
 	srcImg.CopyTo(m_ImageToDlgShow);
 	CDlgShowImg *pDlg = new CDlgShowImg(strWindowName);
@@ -5959,21 +5961,56 @@ void CImage_ProcessingView::Ontest1()
 	double *pDctMat = new double[nBlockSize*nBlockSize]();
 	dct.GenerateDCTMat(pDctMat, nBlockSize);
 
-	double pBlockData[] = { 44,74,13, 3,61,72,70,27
-							,50,27,21,31, 2,69,73,25
-							,21,44,61, 1, 2, 8,48,87
-							,64,93,63,38,19,45,55,23
-							,32,68,37,68,59,44,12,80
-							,96,21,58, 9, 6,35,45,91
-							,73,84,45, 4,37,15,72,23
-							,41,63, 4,61,63,68,89,24 };
+	//double pBlockData[] = { 44,74,13, 3,61,72,70,27
+	//						,50,27,21,31, 2,69,73,25
+	//						,21,44,61, 1, 2, 8,48,87
+	//						,64,93,63,38,19,45,55,23
+	//						,32,68,37,68,59,44,12,80
+	//						,96,21,58, 9, 6,35,45,91
+	//						,73,84,45, 4,37,15,72,23
+	//						,41,63, 4,61,63,68,89,24 };
 
-	double pDCTData[64];
-	double pIDCTData[64];
-	dct.doDCTTransform(pDctMat, pBlockData, pDCTData, nBlockSize);
-	dct.doIDCTTransform(pDctMat, pDCTData, pIDCTData, nBlockSize);
-	delete[]pDctMat;
-	pDctMat = nullptr;
+
+
+	//double d = 129.99999999999997;
+	//cout << (d == 130.0) << endl; //是不等于的,d=130.0的话就是等于
+
+
+	//double pBlockData[] = { 130,131,138,138,142,146,150,150
+	//						,130,131,138,138,142,146,150,150
+	//						,129,128,135,138,142,146,150,150
+	//						,131,127,131,139,143,145,149,149
+	//						,126,130,136,142,146,146,148,149
+	//						,129,131,137,141,145,146,149,148
+	//						,130,138,140,146,147,146,145,146
+	//						,136,142,143,146,146,146,145,144 };
+
+	//for (int i = 0; i != nBlockSize*nBlockSize; ++i)
+	//{
+	//	pBlockData[i] -= 128.0;
+	//}
+
+	//double pDCTData[64];
+	//double pIDCTData[64];
+	//dct.doDCTTransform(pDctMat, pBlockData, pDCTData, nBlockSize);
+	//dct.doIDCTTransform(pDctMat, pDCTData, pIDCTData, nBlockSize);
+	//for (int i = 0; i != nBlockSize*nBlockSize; ++i)
+	//{
+	//	pIDCTData[i] += 128.0;
+	//}
+	//delete[]pDctMat;
+	//pDctMat = nullptr;
+
+	//double pQtedData[64];
+	//dct.doQuantilization(dct.pQtMatY, pDCTData, pQtedData, nBlockSize);
+
+
+	int nR = 137, nG = 120, nB = 20;
+	double Y, U, V,R,G,B;
+	CColorTransformer ct;
+	ct.RGB2YCbCr(nR, nG, nB, Y, U, V);
+	ct.YCbCr2RGB(Y, U, V, R, G, B);
+
 }
 
 
@@ -8387,8 +8424,11 @@ void CImage_ProcessingView::OnEncodeDct()
 
 	CDlgChooseParam *dlg = new CDlgChooseParam(this, _T("DCT变换块大小"), _T("块大小:"), 8);
 	if (dlg->DoModal() == IDCANCEL)
+	{
+		delete dlg; //一定要delete
 		return;
-	
+	}
+
 	const int nBlockSize = (int)dlg->m_dParam1;
 	delete dlg; //一定要delete
 
@@ -8404,7 +8444,7 @@ void CImage_ProcessingView::OnEncodeDct()
 	double *pMatDCT = new double[nBlockSize*nBlockSize]();
 	dct.GenerateDCTMat(pMatDCT, nBlockSize);
 
-	//图像先填充
+	//图像先填充再转成灰度图
 	PaddingImage(m_ImageAfter, m_ImageAfter, 0, nBlockSize);
 	OnTogray();
 
@@ -8421,11 +8461,11 @@ void CImage_ProcessingView::OnEncodeDct()
 		{
 			double *pBlock = new double[nBlockSize*nBlockSize](); //改为在栈上分配不行,参数不是const的了
 			double *pDCTData = new double[nBlockSize*nBlockSize]();
-			//先把值装入每一个块中
+			//先把值装入每一个块中（并减去128.0）
 			int x = 0, y = 0;
-			for (int i1 = i*nBlockSize; i1 != (i + 1)*nBlockSize; ++i1,++y,x=0)
+			for (int i1 = i*nBlockSize; i1 != (i + 1)*nBlockSize; ++i1, ++y, x = 0)
 			{
-				for (int j1 = j*nBlockSize; j1 != (j + 1)*nBlockSize; ++j1,++x)
+				for (int j1 = j*nBlockSize; j1 != (j + 1)*nBlockSize; ++j1, ++x)
 				{
 					pBlock[y*nBlockSize + x] = (double)m_ImageAfter.m_pBits[0][i1][j1];
 				}
@@ -8438,7 +8478,7 @@ void CImage_ProcessingView::OnEncodeDct()
 		}
 	}
 
-	MyImage_ imgDCT(m_ImageAfter.GetWidth(),m_ImageAfter.GetHeight(),0); 
+	MyImage_ imgDCT(m_ImageAfter.GetWidth(), m_ImageAfter.GetHeight(), 0);
 
 	//现在vecDCTBlocks里面存的就是所有小块的DCT数据了,试着将DCT变换的数据显示出来
 	for (int i = 0; i != nYBlockNum; ++i)
@@ -8448,9 +8488,9 @@ void CImage_ProcessingView::OnEncodeDct()
 			//对DCT变换的每一个块，归一化到0-255，用之前的VecNormalize()函数
 			double *pDCTBlock = vecDCTBlocks[i*nXBlockNum + j];
 			vector<double> vecTemp;
-			for (int i1=0;i1!=nBlockSize;++i1)
+			for (int i1 = 0; i1 != nBlockSize; ++i1)
 			{
-				for (int j1=0;j1!=nBlockSize;++j1)
+				for (int j1 = 0; j1 != nBlockSize; ++j1)
 				{
 					vecTemp.push_back(pDCTBlock[i1*nBlockSize + j1]);
 				}
@@ -8461,7 +8501,7 @@ void CImage_ProcessingView::OnEncodeDct()
 			{
 				for (int j1 = j*nBlockSize; j1 != (j + 1)*nBlockSize; ++j1, ++x)
 				{
-					imgDCT.m_pBits[0][i1][j1] = (BYTE)vecTemp[y*nBlockSize+x];
+					imgDCT.m_pBits[0][i1][j1] = (BYTE)vecTemp[y*nBlockSize + x];
 					imgDCT.m_pBits[1][i1][j1] = (BYTE)vecTemp[y*nBlockSize + x];
 					imgDCT.m_pBits[2][i1][j1] = (BYTE)vecTemp[y*nBlockSize + x];
 				}
@@ -8469,15 +8509,351 @@ void CImage_ProcessingView::OnEncodeDct()
 
 		}
 	}
-	
+
 	CString strWndName;
 	strWndName.Format(_T("分块DCT变换结果,块大小:%dx%d"), nBlockSize, nBlockSize);
-	ShowImgInDlg(strWndName,imgDCT);
+	ShowImgInDlg(strWndName, imgDCT);
 
 	//最后要删掉所有中间用到的内存
-	for (auto it=vecDCTBlocks.begin();it!=vecDCTBlocks.end();++it)
+	for (auto it = vecDCTBlocks.begin(); it != vecDCTBlocks.end(); ++it)
 	{
-		delete[] (*it);
+		delete[](*it);
+		*it = NULL;
+	}
+
+	delete[]pMatDCT;
+	pMatDCT = NULL;
+	return;
+}
+
+
+void CImage_ProcessingView::OnEncodeDct2()
+{
+	// TODO: 在此添加命令处理程序代码
+	if (m_Image.IsNull())
+		return;
+
+	if (m_ImageAfter.IsNull())
+		m_Image.CopyTo(m_ImageAfter);
+
+	CDlgChooseParam *dlg = new CDlgChooseParam(this, _T("DCT变换块大小"), _T("块大小:"), 8);
+	if (dlg->DoModal() == IDCANCEL)
+	{
+		delete dlg; //一定要delete
+		return;
+	}
+
+
+	const int nBlockSize = (int)dlg->m_dParam1;
+	delete dlg; //一定要delete
+
+				//是2的幂次且大于4小于宽度高度
+	if (!(nBlockSize >= 4 && (nBlockSize&(nBlockSize - 1)) == 0 && nBlockSize < m_nWidth && nBlockSize < m_nHeight))
+	{
+		AfxMessageBox(_T("参数必须是2的幂次且大于等于4!"));
+		return;
+	}
+
+	//生成DCT矩阵
+	DCT dct;
+	double *pMatDCT = new double[nBlockSize*nBlockSize]();
+	dct.GenerateDCTMat(pMatDCT, nBlockSize);
+
+	//图像先填充再转成灰度图
+	PaddingImage(m_ImageAfter, m_ImageAfter, 0, nBlockSize);
+	OnTogray();
+
+	int nXBlockNum = m_ImageAfter.GetWidth() / nBlockSize;
+	int nYBlockNum = m_ImageAfter.GetHeight() / nBlockSize;
+
+
+	vector<double*> vecDCTBlocks;
+	//double pBlock[nBlockSize*nBlockSize]; //这里在栈上分配会快一些
+	//遍历每一个块执行DCT变换
+	for (int i = 0; i != nYBlockNum; ++i)
+	{
+		for (int j = 0; j != nXBlockNum; ++j)
+		{
+			double *pBlock = new double[nBlockSize*nBlockSize](); //改为在栈上分配不行,参数不是const的了
+			double *pDCTData = new double[nBlockSize*nBlockSize]();
+			//先把值装入每一个块中（并减去128.0）
+			int x = 0, y = 0;
+			for (int i1 = i*nBlockSize; i1 != (i + 1)*nBlockSize; ++i1, ++y, x = 0)
+			{
+				for (int j1 = j*nBlockSize; j1 != (j + 1)*nBlockSize; ++j1, ++x)
+				{
+					pBlock[y*nBlockSize + x] = (double)m_ImageAfter.m_pBits[0][i1][j1] - 128.0;
+				}
+			}
+			//然后对这个块执行DCT变换，再装到vecDCTBlocks里面
+			dct.doDCTTransform(pMatDCT, pBlock, pDCTData, nBlockSize);
+			vecDCTBlocks.push_back(pDCTData); //注意，这里pDCTData指针离开作用域就都失效了，但是内存并没有删掉，唯一能访问到的办法是vec里面
+			delete[] pBlock;
+			pBlock = NULL;
+		}
+	}
+
+	MyImage_ imgDCT(m_ImageAfter.GetWidth(), m_ImageAfter.GetHeight(), 0);
+
+	//现在vecDCTBlocks里面存的就是所有小块的DCT数据了,试着将DCT变换的数据显示出来
+	for (int i = 0; i != nYBlockNum; ++i)
+	{
+		for (int j = 0; j != nXBlockNum; ++j)
+		{
+			//对DCT变换的每一个块，归一化到0-255，用之前的VecNormalize()函数
+			double *pDCTBlock = vecDCTBlocks[i*nXBlockNum + j];
+			vector<double> vecTemp;
+			for (int i1 = 0; i1 != nBlockSize; ++i1)
+			{
+				for (int j1 = 0; j1 != nBlockSize; ++j1)
+				{
+					vecTemp.push_back(pDCTBlock[i1*nBlockSize + j1]);
+				}
+			}
+			VecNormalize(vecTemp, 0.0, 255.0);
+			int x = 0, y = 0;
+			for (int i1 = i*nBlockSize; i1 != (i + 1)*nBlockSize; ++i1, ++y, x = 0)
+			{
+				for (int j1 = j*nBlockSize; j1 != (j + 1)*nBlockSize; ++j1, ++x)
+				{
+					imgDCT.m_pBits[0][i1][j1] = (BYTE)vecTemp[y*nBlockSize + x];
+					imgDCT.m_pBits[1][i1][j1] = (BYTE)vecTemp[y*nBlockSize + x];
+					imgDCT.m_pBits[2][i1][j1] = (BYTE)vecTemp[y*nBlockSize + x];
+				}
+			}
+
+		}
+	}
+
+	CString strWndName;
+	strWndName.Format(_T("分块DCT变换结果(减去128),块大小:%dx%d"), nBlockSize, nBlockSize);
+	ShowImgInDlg(strWndName, imgDCT);
+
+	//最后要删掉所有中间用到的内存
+	for (auto it = vecDCTBlocks.begin(); it != vecDCTBlocks.end(); ++it)
+	{
+		delete[](*it);
+		*it = NULL;
+	}
+
+	delete[]pMatDCT;
+	pMatDCT = NULL;
+	return;
+}
+
+
+void CImage_ProcessingView::OnEncodeJpeg()
+{
+	// TODO: 在此添加命令处理程序代码
+	if (m_Image.IsNull())
+		return;
+
+	if (m_ImageAfter.IsNull())
+		m_Image.CopyTo(m_ImageAfter);
+
+	const int nBlockSize = 8; //jpeg编码下强制为8了
+
+	//生成DCT矩阵
+	DCT dct;
+	double *pMatDCT = new double[nBlockSize*nBlockSize]();
+	dct.GenerateDCTMat(pMatDCT, nBlockSize);
+
+	//图像先填充再转到YUV色彩空间
+	PaddingImage(m_ImageAfter, m_ImageAfter, 0, nBlockSize);
+	CMyImage_double dImg_YUV;
+	dImg_YUV.Create(m_ImageAfter.GetWidth(), m_ImageAfter.GetHeight(), 0);
+	CColorTransformer ct;
+	for (int i = 0; i != m_ImageAfter.GetHeight(); ++i)
+	{
+		for (int j = 0; j != m_ImageAfter.GetWidth(); ++j)
+		{//这里实际是转换到的YCbCr空间
+			ct.RGB2YCbCr(m_ImageAfter.m_pBits[2][i][j], m_ImageAfter.m_pBits[1][i][j], m_ImageAfter.m_pBits[0][i][j]
+				, dImg_YUV.m_pBits[0][i][j], dImg_YUV.m_pBits[1][i][j], dImg_YUV.m_pBits[2][i][j]);
+		}
+	}
+
+	////把YCbCr空间转换回RGB空间
+	//for (int i = 0; i != m_ImageAfter.GetHeight(); ++i)
+	//{
+	//	for (int j = 0; j != m_ImageAfter.GetWidth(); ++j)
+	//	{//这里实际是转换到的YCbCr空间
+	//		double R, G, B;
+	//		ct.YCbCr2RGB( dImg_YUV.m_pBits[0][i][j], dImg_YUV.m_pBits[1][i][j], dImg_YUV.m_pBits[2][i][j]
+	//		,R,G,B);
+	//		m_ImageAfter.m_pBits[0][i][j] = (BYTE)B;
+	//		m_ImageAfter.m_pBits[1][i][j] = (BYTE)G;
+	//		m_ImageAfter.m_pBits[2][i][j] = (BYTE)R;
+
+	//	}
+	//}
+	//ShowImgInDlg(_T("aaa"), m_ImageAfter);
+	//UpdateState();
+	//return;
+
+
+	int nXBlockNum = m_ImageAfter.GetWidth() / nBlockSize;
+	int nYBlockNum = m_ImageAfter.GetHeight() / nBlockSize;
+
+	vector<double*> vecDCTBlocksY, vecDCTBlocksU, vecDCTBlocksV;
+	//double pBlock[nBlockSize*nBlockSize]; //这里在栈上分配会快一些
+	//遍历每一个块执行DCT变换
+	for (int i = 0; i != nYBlockNum; ++i)
+	{
+		for (int j = 0; j != nXBlockNum; ++j)
+		{
+			double *pBlockY = new double[nBlockSize*nBlockSize](); //改为在栈上分配不行,参数不是const的了
+			double *pBlockU = new double[nBlockSize*nBlockSize](); 
+			double *pBlockV = new double[nBlockSize*nBlockSize](); 
+
+			double *pDCTDataY = new double[nBlockSize*nBlockSize]();
+			double *pDCTDataU = new double[nBlockSize*nBlockSize]();
+			double *pDCTDataV = new double[nBlockSize*nBlockSize]();
+
+			//先把值装入每一个块中（并减去128.0）
+			int x = 0, y = 0;
+			for (int i1 = i*nBlockSize; i1 != (i + 1)*nBlockSize; ++i1, ++y, x = 0)
+			{
+				for (int j1 = j*nBlockSize; j1 != (j + 1)*nBlockSize; ++j1, ++x)
+				{
+					pBlockY[y*nBlockSize + x] = dImg_YUV.m_pBits[0][i1][j1];
+					//U和V需要减去128吗？
+					pBlockU[y*nBlockSize + x] = dImg_YUV.m_pBits[1][i1][j1];
+					pBlockV[y*nBlockSize + x] = dImg_YUV.m_pBits[2][i1][j1];
+
+				}
+			}
+			//然后对这个块执行DCT变换，再装到vecDCTBlocks里面
+			dct.doDCTTransform(pMatDCT, pBlockY, pDCTDataY, nBlockSize);
+			dct.doDCTTransform(pMatDCT, pBlockU, pDCTDataU, nBlockSize);
+			dct.doDCTTransform(pMatDCT, pBlockV, pDCTDataV, nBlockSize);
+			vecDCTBlocksY.push_back(pDCTDataY);
+			vecDCTBlocksU.push_back(pDCTDataU);
+			vecDCTBlocksV.push_back(pDCTDataV);
+			delete[] pBlockY;
+			delete[] pBlockU;
+			delete[] pBlockV;
+			pBlockY = NULL;
+			pBlockU = NULL;
+			pBlockV = NULL;
+		}
+	}
+
+	//现在vecDCTBlocks里面存的就是所有小块的DCT数据了,对每一块DCT变换结果进行量化
+	for (int i = 0; i != nYBlockNum; ++i)
+	{
+		for (int j = 0; j != nXBlockNum; ++j)
+		{
+			double *pDCTBlockY = vecDCTBlocksY[i*nXBlockNum + j];
+			double *pDCTBlockU = vecDCTBlocksU[i*nXBlockNum + j];
+			double *pDCTBlockV = vecDCTBlocksV[i*nXBlockNum + j];
+			//量化
+			dct.doQuantilization(dct.pQtMatY, pDCTBlockY, pDCTBlockY, nBlockSize);
+			dct.doQuantilization(dct.pQtMatUV, pDCTBlockU, pDCTBlockU, nBlockSize);
+			dct.doQuantilization(dct.pQtMatUV, pDCTBlockV, pDCTBlockV, nBlockSize);
+		}
+	}
+
+	//对量化后的DCT数据进行霍夫曼编码
+
+	//对编码数据进行解码，得到DCT变换的系数
+
+	//对得到的系数进行反量化
+	for (int i = 0; i != nYBlockNum; ++i)
+	{
+		for (int j = 0; j != nXBlockNum; ++j)
+		{
+			double *pDCTBlockY = vecDCTBlocksY[i*nXBlockNum + j];
+			double *pDCTBlockU = vecDCTBlocksU[i*nXBlockNum + j];
+			double *pDCTBlockV = vecDCTBlocksV[i*nXBlockNum + j];
+			//反量化
+			dct.doInverseQuantilization(dct.pQtMatY, pDCTBlockY, pDCTBlockY, nBlockSize);
+			dct.doInverseQuantilization(dct.pQtMatUV, pDCTBlockU, pDCTBlockU, nBlockSize);
+			dct.doInverseQuantilization(dct.pQtMatUV, pDCTBlockV, pDCTBlockV, nBlockSize);
+		}
+	}
+
+
+	//对量化后的块进行IDCT，重建图像
+	vector<double*> vecIDCTBlocksY, vecIDCTBlocksU, vecIDCTBlocksV;
+	for (int i = 0; i != nYBlockNum; ++i)
+	{
+		for (int j = 0; j != nXBlockNum; ++j)
+		{
+			double *pDCTBlockY = vecDCTBlocksY[i*nXBlockNum + j];
+			double *pDCTBlockU = vecDCTBlocksU[i*nXBlockNum + j];
+			double *pDCTBlockV = vecDCTBlocksV[i*nXBlockNum + j];
+
+			double *pIDCTBlockY = new double[nBlockSize*nBlockSize]();
+			double *pIDCTBlockU = new double[nBlockSize*nBlockSize]();
+			double *pIDCTBlockV = new double[nBlockSize*nBlockSize]();
+
+			dct.doIDCTTransform(pMatDCT, pDCTBlockY, pIDCTBlockY, nBlockSize);
+			dct.doIDCTTransform(pMatDCT, pDCTBlockU, pIDCTBlockU, nBlockSize);
+			dct.doIDCTTransform(pMatDCT, pDCTBlockV, pIDCTBlockV, nBlockSize);
+			vecIDCTBlocksY.push_back(pIDCTBlockY);
+			vecIDCTBlocksU.push_back(pIDCTBlockU);
+			vecIDCTBlocksV.push_back(pIDCTBlockV);
+		}
+	}
+
+	//解码后的图像进行恢复
+	//遍历每一个块
+	MyImage_ imgJpeg(m_ImageAfter.GetWidth(), m_ImageAfter.GetHeight(), 0);
+	for (int i = 0; i != nYBlockNum; ++i)
+	{
+		for (int j = 0; j != nXBlockNum; ++j)
+		{
+			double *pIDCTBlockY = vecIDCTBlocksY[i*nXBlockNum + j];
+			double *pIDCTBlockU = vecIDCTBlocksU[i*nXBlockNum + j];
+			double *pIDCTBlockV = vecIDCTBlocksV[i*nXBlockNum + j];
+			//每一个块的数据恢复到对应的位置
+			int x = 0, y = 0;
+			double R, G, B;
+			for (int i1 = i*nBlockSize; i1 != (i + 1)*nBlockSize; ++i1, ++y, x = 0)
+			{
+				for (int j1 = j*nBlockSize; j1 != (j + 1)*nBlockSize; ++j1, ++x)
+				{
+					ct.YCbCr2RGB(pIDCTBlockY[y*nBlockSize + x], pIDCTBlockU[y*nBlockSize + x], pIDCTBlockV[y*nBlockSize + x]
+						, R, G, B);
+					imgJpeg.m_pBits[2][i1][j1] = (BYTE)SaturateCast(R,0.0,255.0);
+					imgJpeg.m_pBits[1][i1][j1] = (BYTE)SaturateCast(G, 0.0, 255.0);
+					imgJpeg.m_pBits[0][i1][j1] = (BYTE)SaturateCast(B, 0.0, 255.0);
+				}
+			}
+		}
+	}
+	ShowImgInDlg(_T("JPEG编码结果："), imgJpeg);
+
+	//最后要删掉所有中间用到的内存
+	for (auto it = vecDCTBlocksY.begin(); it != vecDCTBlocksY.end(); ++it)
+	{
+		delete[](*it);
+		*it = NULL;
+	}
+	for (auto it = vecDCTBlocksU.begin(); it != vecDCTBlocksU.end(); ++it)
+	{
+		delete[](*it);
+		*it = NULL;
+	}	
+	for (auto it = vecDCTBlocksV.begin(); it != vecDCTBlocksV.end(); ++it)
+	{
+		delete[](*it);
+		*it = NULL;
+	}
+
+	for (auto it = vecIDCTBlocksY.begin(); it != vecIDCTBlocksY.end(); ++it)
+	{
+		delete[](*it);
+		*it = NULL;
+	}
+	for (auto it = vecIDCTBlocksU.begin(); it != vecIDCTBlocksU.end(); ++it)
+	{
+		delete[](*it);
+		*it = NULL;
+	}
+	for (auto it = vecIDCTBlocksV.begin(); it != vecIDCTBlocksV.end(); ++it)
+	{
+		delete[](*it);
 		*it = NULL;
 	}
 
