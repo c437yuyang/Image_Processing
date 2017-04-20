@@ -8672,25 +8672,6 @@ void CImage_ProcessingView::OnEncodeJpeg()
 		}
 	}
 
-	////把YCbCr空间转换回RGB空间
-	//for (int i = 0; i != m_ImageAfter.GetHeight(); ++i)
-	//{
-	//	for (int j = 0; j != m_ImageAfter.GetWidth(); ++j)
-	//	{//这里实际是转换到的YCbCr空间
-	//		double R, G, B;
-	//		ct.YCbCr2RGB( dImg_YUV.m_pBits[0][i][j], dImg_YUV.m_pBits[1][i][j], dImg_YUV.m_pBits[2][i][j]
-	//		,R,G,B);
-	//		m_ImageAfter.m_pBits[0][i][j] = (BYTE)B;
-	//		m_ImageAfter.m_pBits[1][i][j] = (BYTE)G;
-	//		m_ImageAfter.m_pBits[2][i][j] = (BYTE)R;
-
-	//	}
-	//}
-	//ShowImgInDlg(_T("aaa"), m_ImageAfter);
-	//UpdateState();
-	//return;
-
-
 	int nXBlockNum = m_ImageAfter.GetWidth() / nBlockSize;
 	int nYBlockNum = m_ImageAfter.GetHeight() / nBlockSize;
 
@@ -8715,7 +8696,7 @@ void CImage_ProcessingView::OnEncodeJpeg()
 			{
 				for (int j1 = j*nBlockSize; j1 != (j + 1)*nBlockSize; ++j1, ++x)
 				{
-					pBlockY[y*nBlockSize + x] = dImg_YUV.m_pBits[0][i1][j1];
+					pBlockY[y*nBlockSize + x] = dImg_YUV.m_pBits[0][i1][j1]-128.0;
 					//U和V需要减去128吗？
 					pBlockU[y*nBlockSize + x] = dImg_YUV.m_pBits[1][i1][j1];
 					pBlockV[y*nBlockSize + x] = dImg_YUV.m_pBits[2][i1][j1];
@@ -8813,15 +8794,16 @@ void CImage_ProcessingView::OnEncodeJpeg()
 			{
 				for (int j1 = j*nBlockSize; j1 != (j + 1)*nBlockSize; ++j1, ++x)
 				{
-					ct.YCbCr2RGB(pIDCTBlockY[y*nBlockSize + x], pIDCTBlockU[y*nBlockSize + x], pIDCTBlockV[y*nBlockSize + x]
+					ct.YCbCr2RGB(pIDCTBlockY[y*nBlockSize + x]+128.0, pIDCTBlockU[y*nBlockSize + x], pIDCTBlockV[y*nBlockSize + x]
 						, R, G, B);
-					imgJpeg.m_pBits[2][i1][j1] = (BYTE)SaturateCast(R,0.0,255.0);
+					imgJpeg.m_pBits[2][i1][j1] = (BYTE)SaturateCast(R,0.0,255.0); //因为数据进行了量化，所以可能会出现溢出的现象，需要处理一下
 					imgJpeg.m_pBits[1][i1][j1] = (BYTE)SaturateCast(G, 0.0, 255.0);
 					imgJpeg.m_pBits[0][i1][j1] = (BYTE)SaturateCast(B, 0.0, 255.0);
 				}
 			}
 		}
 	}
+	imgJpeg.Save(_T("decoded_jpeg.bmp"));
 	ShowImgInDlg(_T("JPEG编码结果："), imgJpeg);
 
 	//最后要删掉所有中间用到的内存
