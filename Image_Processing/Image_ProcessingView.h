@@ -29,6 +29,7 @@
 #include "HuffmanCoding.h"
 #include "DCT.h"
 #include "ColorTransformer.h"
+#include "JPEG.h"
 
 #include <cmath>
 #include <map>

@@ -208,6 +208,7 @@
     <ClInclude Include="Image_Processing.h" />
     <ClInclude Include="Image_ProcessingDoc.h" />
     <ClInclude Include="Image_ProcessingView.h" />
+    <ClInclude Include="JPEG.h" />
     <ClInclude Include="MainFrm.h" />
     <ClInclude Include="MotionFilter.h" />
     <ClInclude Include="MyHuffman.h" />
@@ -245,6 +246,7 @@
     <ClCompile Include="Image_Processing.cpp" />
     <ClCompile Include="Image_ProcessingDoc.cpp" />
     <ClCompile Include="Image_ProcessingView.cpp" />
+    <ClCompile Include="JPEG.cpp" />
     <ClCompile Include="MainFrm.cpp" />
     <ClCompile Include="MotionFilter.cpp" />
     <ClCompile Include="MyHuffman.cpp" />

@@ -6005,12 +6005,47 @@ void CImage_ProcessingView::Ontest1()
 	//dct.doQuantilization(dct.pQtMatY, pDCTData, pQtedData, nBlockSize);
 
 
-	int nR = 137, nG = 120, nB = 20;
-	double Y, U, V,R,G,B;
-	CColorTransformer ct;
-	ct.RGB2YCbCr(nR, nG, nB, Y, U, V);
-	ct.YCbCr2RGB(Y, U, V, R, G, B);
+	//int nR = 137, nG = 120, nB = 20;
+	//double Y, U, V,R,G,B;
+	//CColorTransformer ct;
+	//ct.RGB2YCbCr(nR, nG, nB, Y, U, V);
+	//ct.YCbCr2RGB(Y, U, V, R, G, B);
 
+
+	//double pBlockData[] = { 130,131,138,138,142,146,150,150
+	//						,130,131,138,138,142,146,150,150
+	//						,129,128,135,138,142,146,150,150
+	//						,131,127,131,139,143,145,149,149
+	//						,126,130,136,142,146,146,148,149
+	//						,129,131,137,141,145,146,149,148
+	//						,130,138,140,146,147,146,145,146
+	//						,136,142,143,146,146,146,145,144 };
+	//double pZigZag[64];
+	//CJPEG jpeg;
+	//jpeg.ZigZag(pBlockData, pZigZag, 8);
+	//jpeg.getLuminSymbolSequence(pBlockData, nBlockSize, 0);
+
+	double pBlockData[64] = {
+		6,-5,-1,0,0,0,0,0,
+		-1,-1,1,0,0,0,0,0,
+		1,1,0,0,0,0,0,0,
+		0,0,0,0,0,0,0,0,
+		0,0,0,0,0,0,0,0,
+		0,0,0,0,0,0,0,0,
+		0,0,0,0,0,0,0,0,
+		0,0,0,0,0,0,0,0
+	};
+	CJPEG jpeg;
+	double pZigZag[64];
+	jpeg.ZigZag(pBlockData, pZigZag, 8);
+	auto symbols = jpeg.getLuminSymbolSequence(pZigZag, nBlockSize, 0);
+	vector<string> codes = jpeg.getCodesBySymbolSequence(symbols);
+
+	//int i = 126;
+	//string s = jpeg.getBinaryCode(i);
+	//i = -5;
+	//s = jpeg.getBinaryCode(i);
+	return;
 }
 
 
