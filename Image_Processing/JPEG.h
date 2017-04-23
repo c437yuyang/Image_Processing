@@ -39,13 +39,16 @@ public:
 	vector<symbol> getLuminSymbolSequence(double *pZigZag, int nBlockSize, int preDC);
 	vector<string> getLuminCodesBySymbolSequence(vector<symbol> &symbols);
 	string searchForLuminCode(int zlen, int SSSS);
+	string searchForChrominCode(int zlen, int SSSS);
 	string getBinaryCode(int value);
-	vector<CJPEG::symbol> getChrominSymbolSequence(double * pZigZag, int nBlockSize, int preDC);
 	vector<string> getChrominCodesBySymbolSequence(vector<symbol>& symbols);
+	void decodeLuminByCodes(vector<string> &codes, double *pBlockData, int nBlockSize, int preDC);
+	void decodeChrominByCodes(vector<string> &codes, double * pBlockData, int nBlockSize, int preDC);
 	bool loadCodeTable();
 
-	vector<DCTableItem> m_luminDCTable;
-	vector<DCTableItem> m_chrominDCTable;
-	vector<ACTableItem> m_luminACTable;
+	vector<DCTableItem> m_TableluminDC;
+	vector<ACTableItem> m_TableluminAC;
+	vector<DCTableItem> m_TablechrominDC;
+	vector<ACTableItem> m_TablechrominAC;
 };
 

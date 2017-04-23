@@ -6027,21 +6027,10 @@ void CImage_ProcessingView::Ontest1()
 	//jpeg.ZigZag(pBlockData, pZigZag, 8);
 	//jpeg.getLuminSymbolSequence(pBlockData, nBlockSize, 0);
 
-	//double pBlockData[64] = {
-	//	6,-5,-1,0,0,0,0,0,
-	//	-1,-1,1,0,0,0,0,0,
-	//	1,1,0,0,0,0,0,0,
-	//	0,0,0,0,0,0,0,0,
-	//	0,0,0,0,0,0,0,0,
-	//	0,0,0,0,0,0,0,0,
-	//	0,0,0,0,0,0,0,0,
-	//	0,0,0,0,0,0,0,0
-	//};
-
 	double pBlockData[64] = {
-		0,0,0,0,0,0,0,0,
-		0,0,0,0,0,0,0,0,
-		0,0,0,0,0,0,0,0,
+		6,-5,-1,0,0,0,0,0,
+		-1,-1,1,0,0,0,0,0,
+		1,1,0,0,0,0,0,0,
 		0,0,0,0,0,0,0,0,
 		0,0,0,0,0,0,0,0,
 		0,0,0,0,0,0,0,0,
@@ -6054,6 +6043,10 @@ void CImage_ProcessingView::Ontest1()
 	jpeg.ZigZag(pBlockData, pZigZag, 8);
 	auto symbols = jpeg.getLuminSymbolSequence(pZigZag, nBlockSize, 0);
 	vector<string> codes = jpeg.getLuminCodesBySymbolSequence(symbols);
+	double pDecodeDCTData[64];
+	jpeg.decodeLuminByCodes(codes, pDecodeDCTData, 8, 0);
+
+
 
 	//int i = 126;
 	//string s = jpeg.getBinaryCode(i);
@@ -8747,8 +8740,8 @@ void CImage_ProcessingView::OnEncodeJpeg()
 				{
 					pBlockY[y*nBlockSize + x] = dImg_YUV.m_pBits[0][i1][j1] - 128.0;
 					//U和V需要减去128吗？
-					pBlockU[y*nBlockSize + x] = dImg_YUV.m_pBits[1][i1][j1];
-					pBlockV[y*nBlockSize + x] = dImg_YUV.m_pBits[2][i1][j1];
+					pBlockU[y*nBlockSize + x] = dImg_YUV.m_pBits[1][i1][j1] - 128.0;
+					pBlockV[y*nBlockSize + x] = dImg_YUV.m_pBits[2][i1][j1] - 128.0;
 
 				}
 			}
@@ -8820,8 +8813,8 @@ void CImage_ProcessingView::OnEncodeJpeg()
 			double *pZigZagU = vecZigZagU[i*nXBlockNum + j];
 			double *pZigZagV = vecZigZagV[i*nXBlockNum + j];
 			vecCodesY.push_back(jpeg.getLuminCodesBySymbolSequence(jpeg.getLuminSymbolSequence(pZigZagY, nBlockSize, preDCY)));
-			vecCodesU.push_back(jpeg.getChrominCodesBySymbolSequence(jpeg.getChrominSymbolSequence(pZigZagU, nBlockSize, preDCU)));
-			vecCodesV.push_back(jpeg.getChrominCodesBySymbolSequence(jpeg.getChrominSymbolSequence(pZigZagV, nBlockSize, preDCV)));
+			vecCodesU.push_back(jpeg.getChrominCodesBySymbolSequence(jpeg.getLuminSymbolSequence(pZigZagU, nBlockSize, preDCU)));
+			vecCodesV.push_back(jpeg.getChrominCodesBySymbolSequence(jpeg.getLuminSymbolSequence(pZigZagV, nBlockSize, preDCV)));
 			preDCY = pZigZagY[0];
 			preDCU = pZigZagU[0];
 			preDCV = pZigZagV[0];
@@ -8890,7 +8883,7 @@ void CImage_ProcessingView::OnEncodeJpeg()
 			{
 				for (int j1 = j*nBlockSize; j1 != (j + 1)*nBlockSize; ++j1, ++x)
 				{
-					ct.YCbCr2RGB(pIDCTBlockY[y*nBlockSize + x] + 128.0, pIDCTBlockU[y*nBlockSize + x], pIDCTBlockV[y*nBlockSize + x]
+					ct.YCbCr2RGB(pIDCTBlockY[y*nBlockSize + x] + 128.0, pIDCTBlockU[y*nBlockSize + x] + 128.0, pIDCTBlockV[y*nBlockSize + x] + 128.0
 						, R, G, B);
 					imgJpeg.m_pBits[2][i1][j1] = (BYTE)SaturateCast(R, 0.0, 255.0); //因为数据进行了量化，所以可能会出现溢出的现象，需要处理一下
 					imgJpeg.m_pBits[1][i1][j1] = (BYTE)SaturateCast(G, 0.0, 255.0);
