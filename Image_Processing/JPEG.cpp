@@ -43,8 +43,6 @@ void CJPEG::ZigZag(double * pBlockData, double * pZigZag, int nBlockSize)
 
 }
 
-
-
 bool CJPEG::loadCodeTable()
 {
 	//加载亮度DC系数表
@@ -157,7 +155,7 @@ vector<CJPEG::symbol> CJPEG::getLuminSymbolSequence(double * pZigZag, int nBlock
 			}
 			else
 			{
-				s.SSSS = (int)floor(log2(abs(diff))) + 1;
+				s.SSSS = (int)floor(log2(abs(pZigZag[i]))) + 1;
 			}
 			s.zLen = zLen;
 			s.value = pZigZag[i];
@@ -172,12 +170,10 @@ vector<CJPEG::symbol> CJPEG::getLuminSymbolSequence(double * pZigZag, int nBlock
 	s.value = -INT_MAX;
 	symbols.push_back(s);
 	//到这里交流系数就编码完成了
-
-
 	return symbols;
 }
 
-vector<string> CJPEG::getCodesBySymbolSequence(vector<symbol> &symbols)
+vector<string> CJPEG::getLuminCodesBySymbolSequence(vector<symbol> &symbols)
 {
 	vector<string> codes;
 	for (auto it=symbols.begin();it!=symbols.end();++it)
@@ -193,12 +189,14 @@ vector<string> CJPEG::getCodesBySymbolSequence(vector<symbol> &symbols)
 
 		if (it->value==-INT_MAX) //表示是截止块，单独处理
 		{
-			codes.push_back(searchForCode(it->zLen, it->SSSS));
+			codes.push_back(searchForLuminCode(it->zLen, it->SSSS));
 			continue;
 		}
 
+		//cout << searchForCode(it->zLen, it->SSSS) << endl;
+
 		//先装入code
-		codes.push_back(searchForCode(it->zLen, it->SSSS));
+		codes.push_back(searchForLuminCode(it->zLen, it->SSSS));
 		//再装入对应的二进制码
 		codes.push_back(getBinaryCode(it->value));
 	}
@@ -206,7 +204,7 @@ vector<string> CJPEG::getCodesBySymbolSequence(vector<symbol> &symbols)
 }
 
 //根据指定的zlen和ssss查找code(当前还没做优化，查表速度其实可以优化)
-string CJPEG::searchForCode(int zlen,int SSSS)
+string CJPEG::searchForLuminCode(int zlen,int SSSS)
 {
 	for (int i=0;i!=m_luminACTable.size();++i)
 	{
@@ -215,9 +213,10 @@ string CJPEG::searchForCode(int zlen,int SSSS)
 			return m_luminACTable[i].code;
 		}
 	}
+	return "";
 }
 
-//取一个数的二进制编码,正数得到原码，负数得到反码
+//取一个数的二进制编码,正数得到原码，负数得到反码,如果本身就是0，就返回0?和-1岂不是重复了(因为此时的差值为0，根据ssss=0,也可以区别-1和0)
 string CJPEG::getBinaryCode(int value)
 {
 	string code="";
@@ -227,16 +226,19 @@ string CJPEG::getBinaryCode(int value)
 		{
 			if (value%2==1)
 			{
-				code.insert(0, "1");
+				code = "1" + code;
+				//code.insert(0, "1");
 			}
 			else
 			{
-				code.insert(0, "0");
+				code = "0" + code;
+
+				//code.insert(0, "0");
 			}
 			value = value / 2;
 		}
 	}
-	else
+	else if(value<0)
 	{
 		value = abs(value);
 		while (value != 0)
@@ -252,5 +254,102 @@ string CJPEG::getBinaryCode(int value)
 			value = value / 2;
 		}
 	}
+	else
+	{
+		code = "0" + code;
+
+		//code.insert(0, "0");
+	}
 	return code;
+}
+
+
+
+
+vector<CJPEG::symbol> CJPEG::getChrominSymbolSequence(double * pZigZag, int nBlockSize, int preDC)
+{
+	vector<symbol> symbols;
+	symbol s;
+	//先对直流系数进行编码(直流系数的zlen给1)
+	int diff = pZigZag[0] - preDC;
+	if (diff == 0)
+	{
+		s.SSSS = 0;
+	}
+	else if (abs(diff) == 1)
+	{
+		s.SSSS = 1;
+	}
+	else
+	{
+		s.SSSS = (int)floor(log2(abs(diff))) + 1;
+	}
+	s.value = diff;
+	s.zLen = -1; //直流系数统一给-1
+	symbols.push_back(s);
+
+
+	//然后对交流系数进行编码
+	int zLen = 0;
+	int indexEnd = 0;
+	for (int i = 1; i != nBlockSize*nBlockSize; ++i)
+	{
+		if (pZigZag[i] == 0)
+		{
+			zLen += 1;
+		}
+		else
+		{
+			if (pZigZag[i] == 1 || pZigZag[i] == -1)
+			{
+				s.SSSS = 1;
+			}
+			else
+			{
+				s.SSSS = (int)floor(log2(abs(pZigZag[i]))) + 1;
+			}
+			s.zLen = zLen;
+			s.value = pZigZag[i];
+			symbols.push_back(s);
+			zLen = 0;
+			indexEnd = i;
+		}
+	}
+	//最后有一个截止块(0,0)，截止块的value给-INT_MAX
+	s.zLen = 0;
+	s.SSSS = 0;
+	s.value = -INT_MAX;
+	symbols.push_back(s);
+	//到这里交流系数就编码完成了
+	return symbols;
+}
+
+vector<string> CJPEG::getChrominCodesBySymbolSequence(vector<symbol> &symbols)
+{
+	vector<string> codes;
+	for (auto it = symbols.begin(); it != symbols.end(); ++it)
+	{
+		string s;
+		if (it->zLen == -1) //表示是DC系数,DC系数查的表不一样，单独处理
+		{
+			s = m_chrominDCTable[it->SSSS].code;
+			codes.push_back(s);
+			codes.push_back(getBinaryCode(it->value));
+			continue;
+		}
+
+		if (it->value == -INT_MAX) //表示是截止块，单独处理
+		{
+			codes.push_back(searchForLuminCode(it->zLen, it->SSSS)); //没找到色差的huffman表，就先用亮度的
+			continue;
+		}
+
+		//cout << searchForCode(it->zLen, it->SSSS) << endl;
+
+		//先装入code
+		codes.push_back(searchForLuminCode(it->zLen, it->SSSS));
+		//再装入对应的二进制码
+		codes.push_back(getBinaryCode(it->value));
+	}
+	return codes;
 }

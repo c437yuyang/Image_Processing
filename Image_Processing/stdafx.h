@@ -43,7 +43,8 @@
 #define pi 3.1415926535898
 #define PI 3.1415926535898
 #define eps 0.000001
-
+#include <iostream>
+using namespace std;
 
 
 

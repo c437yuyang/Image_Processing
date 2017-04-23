@@ -58,6 +58,8 @@ void VecNormalize(vector<T> &vecT, T normMin, T normMax);
 
 int GetDistance(int R, int G, int B, int RTaget, int GTaget, int BTaget);//自定义计算像素颜色距离函数
 
+void ReleaseBuffer(vector<double *> &vecBuffer);//自定义释放内存函数
+
 //int round(double value); //vs2015版本的math库自带了round函数不需要重新自定义了
 
 // CImage_ProcessingView
@@ -6025,21 +6027,33 @@ void CImage_ProcessingView::Ontest1()
 	//jpeg.ZigZag(pBlockData, pZigZag, 8);
 	//jpeg.getLuminSymbolSequence(pBlockData, nBlockSize, 0);
 
+	//double pBlockData[64] = {
+	//	6,-5,-1,0,0,0,0,0,
+	//	-1,-1,1,0,0,0,0,0,
+	//	1,1,0,0,0,0,0,0,
+	//	0,0,0,0,0,0,0,0,
+	//	0,0,0,0,0,0,0,0,
+	//	0,0,0,0,0,0,0,0,
+	//	0,0,0,0,0,0,0,0,
+	//	0,0,0,0,0,0,0,0
+	//};
+
 	double pBlockData[64] = {
-		6,-5,-1,0,0,0,0,0,
-		-1,-1,1,0,0,0,0,0,
-		1,1,0,0,0,0,0,0,
+		0,0,0,0,0,0,0,0,
+		0,0,0,0,0,0,0,0,
+		0,0,0,0,0,0,0,0,
 		0,0,0,0,0,0,0,0,
 		0,0,0,0,0,0,0,0,
 		0,0,0,0,0,0,0,0,
 		0,0,0,0,0,0,0,0,
 		0,0,0,0,0,0,0,0
 	};
+
 	CJPEG jpeg;
 	double pZigZag[64];
 	jpeg.ZigZag(pBlockData, pZigZag, 8);
 	auto symbols = jpeg.getLuminSymbolSequence(pZigZag, nBlockSize, 0);
-	vector<string> codes = jpeg.getCodesBySymbolSequence(symbols);
+	vector<string> codes = jpeg.getLuminCodesBySymbolSequence(symbols);
 
 	//int i = 126;
 	//string s = jpeg.getBinaryCode(i);
@@ -8718,8 +8732,8 @@ void CImage_ProcessingView::OnEncodeJpeg()
 		for (int j = 0; j != nXBlockNum; ++j)
 		{
 			double *pBlockY = new double[nBlockSize*nBlockSize](); //改为在栈上分配不行,参数不是const的了
-			double *pBlockU = new double[nBlockSize*nBlockSize](); 
-			double *pBlockV = new double[nBlockSize*nBlockSize](); 
+			double *pBlockU = new double[nBlockSize*nBlockSize]();
+			double *pBlockV = new double[nBlockSize*nBlockSize]();
 
 			double *pDCTDataY = new double[nBlockSize*nBlockSize]();
 			double *pDCTDataU = new double[nBlockSize*nBlockSize]();
@@ -8731,7 +8745,7 @@ void CImage_ProcessingView::OnEncodeJpeg()
 			{
 				for (int j1 = j*nBlockSize; j1 != (j + 1)*nBlockSize; ++j1, ++x)
 				{
-					pBlockY[y*nBlockSize + x] = dImg_YUV.m_pBits[0][i1][j1]-128.0;
+					pBlockY[y*nBlockSize + x] = dImg_YUV.m_pBits[0][i1][j1] - 128.0;
 					//U和V需要减去128吗？
 					pBlockU[y*nBlockSize + x] = dImg_YUV.m_pBits[1][i1][j1];
 					pBlockV[y*nBlockSize + x] = dImg_YUV.m_pBits[2][i1][j1];
@@ -8762,16 +8776,63 @@ void CImage_ProcessingView::OnEncodeJpeg()
 			double *pDCTBlockY = vecDCTBlocksY[i*nXBlockNum + j];
 			double *pDCTBlockU = vecDCTBlocksU[i*nXBlockNum + j];
 			double *pDCTBlockV = vecDCTBlocksV[i*nXBlockNum + j];
-			//量化
+			//in-place量化
 			dct.doQuantilization(dct.pQtMatY, pDCTBlockY, pDCTBlockY, nBlockSize);
 			dct.doQuantilization(dct.pQtMatUV, pDCTBlockU, pDCTBlockU, nBlockSize);
 			dct.doQuantilization(dct.pQtMatUV, pDCTBlockV, pDCTBlockV, nBlockSize);
 		}
 	}
 
+
 	//对量化后的DCT数据进行霍夫曼编码
+	CJPEG jpeg;
+	vector<double*> vecZigZagY, vecZigZagU, vecZigZagV;
+	//1.按zigzag扫描
+	for (int i = 0; i != nYBlockNum; ++i)
+	{
+		for (int j = 0; j != nXBlockNum; ++j)
+		{
+			double *pDCTBlockY = vecDCTBlocksY[i*nXBlockNum + j];
+			double *pDCTBlockU = vecDCTBlocksU[i*nXBlockNum + j];
+			double *pDCTBlockV = vecDCTBlocksV[i*nXBlockNum + j];
+
+			double *pZigZagY = new double[nBlockSize*nBlockSize]();
+			double *pZigZagU = new double[nBlockSize*nBlockSize]();
+			double *pZigZagV = new double[nBlockSize*nBlockSize]();
+			jpeg.ZigZag(pDCTBlockY, pZigZagY, nBlockSize);
+			jpeg.ZigZag(pDCTBlockU, pZigZagU, nBlockSize);
+			jpeg.ZigZag(pDCTBlockV, pZigZagV, nBlockSize);
+			vecZigZagY.push_back(pZigZagY);
+			vecZigZagU.push_back(pZigZagU);
+			vecZigZagV.push_back(pZigZagV);
+		}
+	}
+
+
+	//2.进行编码，得到码字(因为没找到色差的ac系数表，所以编码就还是用的亮度的表来做的)
+	vector<vector<string>> vecCodesY, vecCodesU, vecCodesV; //vec的每一个元素一个块
+	int preDCY = 0, preDCU = 0, preDCV = 0; //前一个直流系数
+	for (int i = 0; i != nYBlockNum; ++i)
+	{
+		for (int j = 0; j != nXBlockNum; ++j)
+		{
+			double *pZigZagY = vecZigZagY[i*nXBlockNum + j];
+			double *pZigZagU = vecZigZagU[i*nXBlockNum + j];
+			double *pZigZagV = vecZigZagV[i*nXBlockNum + j];
+			vecCodesY.push_back(jpeg.getLuminCodesBySymbolSequence(jpeg.getLuminSymbolSequence(pZigZagY, nBlockSize, preDCY)));
+			vecCodesU.push_back(jpeg.getChrominCodesBySymbolSequence(jpeg.getChrominSymbolSequence(pZigZagU, nBlockSize, preDCU)));
+			vecCodesV.push_back(jpeg.getChrominCodesBySymbolSequence(jpeg.getChrominSymbolSequence(pZigZagV, nBlockSize, preDCV)));
+			preDCY = pZigZagY[0];
+			preDCU = pZigZagU[0];
+			preDCV = pZigZagV[0];
+			//cout << i*nXBlockNum + j << endl;
+		}
+	}
+
 
 	//对编码数据进行解码，得到DCT变换的系数
+
+
 
 	//对得到的系数进行反量化
 	for (int i = 0; i != nYBlockNum; ++i)
@@ -8829,9 +8890,9 @@ void CImage_ProcessingView::OnEncodeJpeg()
 			{
 				for (int j1 = j*nBlockSize; j1 != (j + 1)*nBlockSize; ++j1, ++x)
 				{
-					ct.YCbCr2RGB(pIDCTBlockY[y*nBlockSize + x]+128.0, pIDCTBlockU[y*nBlockSize + x], pIDCTBlockV[y*nBlockSize + x]
+					ct.YCbCr2RGB(pIDCTBlockY[y*nBlockSize + x] + 128.0, pIDCTBlockU[y*nBlockSize + x], pIDCTBlockV[y*nBlockSize + x]
 						, R, G, B);
-					imgJpeg.m_pBits[2][i1][j1] = (BYTE)SaturateCast(R,0.0,255.0); //因为数据进行了量化，所以可能会出现溢出的现象，需要处理一下
+					imgJpeg.m_pBits[2][i1][j1] = (BYTE)SaturateCast(R, 0.0, 255.0); //因为数据进行了量化，所以可能会出现溢出的现象，需要处理一下
 					imgJpeg.m_pBits[1][i1][j1] = (BYTE)SaturateCast(G, 0.0, 255.0);
 					imgJpeg.m_pBits[0][i1][j1] = (BYTE)SaturateCast(B, 0.0, 255.0);
 				}
@@ -8842,39 +8903,27 @@ void CImage_ProcessingView::OnEncodeJpeg()
 	ShowImgInDlg(_T("JPEG编码结果："), imgJpeg);
 
 	//最后要删掉所有中间用到的内存
-	for (auto it = vecDCTBlocksY.begin(); it != vecDCTBlocksY.end(); ++it)
-	{
-		delete[](*it);
-		*it = NULL;
-	}
-	for (auto it = vecDCTBlocksU.begin(); it != vecDCTBlocksU.end(); ++it)
-	{
-		delete[](*it);
-		*it = NULL;
-	}	
-	for (auto it = vecDCTBlocksV.begin(); it != vecDCTBlocksV.end(); ++it)
-	{
-		delete[](*it);
-		*it = NULL;
-	}
-
-	for (auto it = vecIDCTBlocksY.begin(); it != vecIDCTBlocksY.end(); ++it)
-	{
-		delete[](*it);
-		*it = NULL;
-	}
-	for (auto it = vecIDCTBlocksU.begin(); it != vecIDCTBlocksU.end(); ++it)
-	{
-		delete[](*it);
-		*it = NULL;
-	}
-	for (auto it = vecIDCTBlocksV.begin(); it != vecIDCTBlocksV.end(); ++it)
-	{
-		delete[](*it);
-		*it = NULL;
-	}
+	ReleaseBuffer(vecDCTBlocksY);
+	ReleaseBuffer(vecDCTBlocksU);
+	ReleaseBuffer(vecDCTBlocksV);
+	ReleaseBuffer(vecIDCTBlocksY);
+	ReleaseBuffer(vecIDCTBlocksU);
+	ReleaseBuffer(vecIDCTBlocksV);
+	ReleaseBuffer(vecZigZagY);
+	ReleaseBuffer(vecZigZagU);
+	ReleaseBuffer(vecZigZagV);
 
 	delete[]pMatDCT;
 	pMatDCT = NULL;
 	return;
+}
+
+
+void ReleaseBuffer(vector<double *> &vecBuffer)
+{
+	for (auto it = vecBuffer.begin(); it != vecBuffer.end(); ++it)
+	{
+		delete[](*it);
+		*it = NULL;
+	}
 }
