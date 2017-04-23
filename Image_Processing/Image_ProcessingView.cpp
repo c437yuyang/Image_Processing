@@ -6052,6 +6052,9 @@ void CImage_ProcessingView::Ontest1()
 	//string s = jpeg.getBinaryCode(i);
 	//i = -5;
 	//s = jpeg.getBinaryCode(i);
+
+	//string s = "11101";
+	//int num = jpeg.getNumByBinaryCode(s);
 	return;
 }
 

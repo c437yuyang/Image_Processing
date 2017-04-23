@@ -41,11 +41,13 @@ public:
 	string searchForLuminCode(int zlen, int SSSS);
 	string searchForChrominCode(int zlen, int SSSS);
 	string getBinaryCode(int value);
+	int getNumByBinaryCode(string s);
 	vector<string> getChrominCodesBySymbolSequence(vector<symbol>& symbols);
 	void decodeLuminByCodes(vector<string> &codes, double *pBlockData, int nBlockSize, int preDC);
 	void decodeChrominByCodes(vector<string> &codes, double * pBlockData, int nBlockSize, int preDC);
 	bool loadCodeTable();
-
+	int getLuminDCSSSS(string code);
+	void CJPEG::getLuminACSymbolByTable(string &code, int& zlen, int & ssss);
 	vector<DCTableItem> m_TableluminDC;
 	vector<ACTableItem> m_TableluminAC;
 	vector<DCTableItem> m_TablechrominDC;
