@@ -48,7 +48,9 @@ public:
 	void decodeChrominByCodes(vector<string> &codes, double * pBlockData, int nBlockSize, int preDC);
 	bool loadCodeTable();
 	int getLuminDCSSSS(string code);
-	void CJPEG::getLuminACSymbolByTable(string &code, int& zlen, int & ssss);
+	int getChrominDCSSSS(string code);
+	void getLuminACSymbolByTable(string &code, int& zlen, int & ssss);
+	void getChrominACSymbolByTable(string & code, int & zlen, int & ssss);
 	vector<DCTableItem> m_TableluminDC;
 	vector<ACTableItem> m_TableluminAC;
 	vector<DCTableItem> m_TablechrominDC;

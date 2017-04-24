@@ -8838,8 +8838,37 @@ void CImage_ProcessingView::OnEncodeJpeg()
 	}
 
 
-	//对编码数据(symbol)进行解码，得到DCT变换的系数
+	//对编码数据(codes)进行解码，得到DCT变换的系数
 
+	vector<double*> vecDCTBlocksRecY, vecDCTBlocksRecU, vecDCTBlocksRecV;
+
+	bool bIsFirst=true;
+	preDCY = 0, preDCU = 0, preDCV = 0;
+	for (int i = 0; i != nYBlockNum; ++i)
+	{
+		for (int j = 0; j != nXBlockNum; ++j)
+		{
+			int index = i*nXBlockNum + j;
+			vector<string> &codesY = vecCodesY[index]; //引用，避免数据复制
+			vector<string> &codesU = vecCodesU[index];
+			vector<string> &codesV = vecCodesV[index];
+
+			double *pDCTDataY = new double[nBlockSize*nBlockSize]();
+			double *pDCTDataU = new double[nBlockSize*nBlockSize]();
+			double *pDCTDataV = new double[nBlockSize*nBlockSize]();
+
+			//恢复编码得到量化后的DCT数据
+			jpeg.decodeLuminByCodes(codesY, pDCTDataY, nBlockSize, bIsFirst ? 0 : vecDCTBlocksY[index - 1][0]);
+			jpeg.decodeChrominByCodes(codesU, pDCTDataU, nBlockSize, bIsFirst ? 0 : vecDCTBlocksU[index - 1][0]);
+			jpeg.decodeChrominByCodes(codesV, pDCTDataV, nBlockSize, bIsFirst ? 0 : vecDCTBlocksV[index - 1][0]);
+
+			vecDCTBlocksRecY.push_back(pDCTDataY);
+			vecDCTBlocksRecU.push_back(pDCTDataU);
+			vecDCTBlocksRecV.push_back(pDCTDataV);
+			bIsFirst = false;
+			//cout << i*nXBlockNum + j << endl;
+		}
+	}
 
 
 	//对得到的系数进行反量化
@@ -8917,6 +8946,9 @@ void CImage_ProcessingView::OnEncodeJpeg()
 	ReleaseBuffer(vecIDCTBlocksY);
 	ReleaseBuffer(vecIDCTBlocksU);
 	ReleaseBuffer(vecIDCTBlocksV);
+	ReleaseBuffer(vecDCTBlocksRecY);
+	ReleaseBuffer(vecDCTBlocksRecU);
+	ReleaseBuffer(vecDCTBlocksRecV);
 	ReleaseBuffer(vecZigZagY);
 	ReleaseBuffer(vecZigZagU);
 	ReleaseBuffer(vecZigZagV);

@@ -512,7 +512,7 @@ void CJPEG::getLuminACSymbolByTable(string &code, int& zlen, int & ssss)
 {
 	for (int i = 0; i != m_TableluminAC.size(); ++i)
 	{
-		cout << m_TableluminAC[i].code << " " << code << endl;
+		//cout << m_TableluminAC[i].code << " " << code << endl;
 		if (!strcmp(m_TableluminAC[i].code.c_str(),code.c_str())) //这里不能用==，引用类型
 		{
 			zlen = m_TableluminAC[i].zLen;
@@ -523,10 +523,89 @@ void CJPEG::getLuminACSymbolByTable(string &code, int& zlen, int & ssss)
 	cout << "没找到" << endl;
 }
 
+void CJPEG::getChrominACSymbolByTable(string &code, int& zlen, int & ssss)
+{
+	for (int i = 0; i != m_TablechrominAC.size(); ++i)
+	{
+		//cout << m_TablechrominAC[i].code << " " << code << endl;
+		if (!strcmp(m_TablechrominAC[i].code.c_str(), code.c_str())) //这里不能用==，引用类型
+		{
+			zlen = m_TablechrominAC[i].zLen;
+			ssss = m_TablechrominAC[i].SSSS;
+			return;
+		}
+	}
+	cout << "没找到" << endl;
+}
+
+
 //根据码字进行解码（色差）
 void CJPEG::decodeChrominByCodes(vector<string> &codes, double *pBlockData, int nBlockSize, int preDC)
 {
+	vector<symbol> symbols; //先解码得到符号序列，再解码符号序列得到原始值
+							//先解码直流系数
+	int ZRLcomplementary = 0;
+	symbol s;
+	s.zLen = -1;
+	s.SSSS = getChrominDCSSSS(codes[0]);
+	s.value = getNumByBinaryCode(codes[1]);
+	symbols.push_back(s); // 
+	for (int i = 2; i != codes.size(); ++i)
+	{
+		getChrominACSymbolByTable(codes[i], s.zLen, s.SSSS);
+		if ((s.SSSS == 0 && s.zLen == 0)) //EOB
+		{
+			s.value = -INT_MAX;
+			symbols.push_back(s);
+			continue;
+		}
+		if (s.SSSS == 0 && s.zLen == 15)//ZRL，还得给下一个的zlen+16才行
+		{
+			s.value = -INT_MAX;
+			symbols.push_back(s);
+			ZRLcomplementary += 16;
+			continue;
+		}
 
+		//否则就是正常的，带有一个value的编码
+		if (ZRLcomplementary != 0) //如果前面出现了zrl补偿的
+		{
+			s.zLen += ZRLcomplementary;
+			ZRLcomplementary = 0;
+		}
+		s.value = getNumByBinaryCode(codes[++i]); //让index+1
+		symbols.push_back(s);
+	}
+
+	//现在得到了symbols，再根据symbols恢复block
+	double *pBlockUnZZ = new double[nBlockSize*nBlockSize]();
+	//首先是直流系数
+	pBlockUnZZ[0] = symbols[0].value + preDC;
+	//然后按照zigzag恢复交流系数
+	memset(pBlockData, 0.0, nBlockSize*nBlockSize); //先全部置0
+													//先全部恢复，再逆ZigZag
+	int index = 0;
+	for (int i = 1; i != symbols.size(); ++i)
+	{
+		if (symbols[i].value == -INT_MAX) //EOB和ZRL
+		{
+			if (symbols[i].zLen == 0 && symbols[i].SSSS == 0) //EOB
+			{
+				break;
+			}
+			else //ZRL
+			{
+				index += 16;
+			}
+		}
+		index += (symbols[i].zLen + 1);
+		pBlockUnZZ[index] = symbols[i].value;
+	}
+	//现在pBlockUnZZ就是恢复得到的Zig-Zag后的数据，再进行逆Zig-Zag即可
+
+	IZigZag(pBlockUnZZ, pBlockData, nBlockSize);
+
+	return;
 }
 
 
@@ -556,6 +635,17 @@ int CJPEG::getLuminDCSSSS(string code)
 		if (m_TableluminDC[i].code == code)
 		{
 			return m_TableluminDC[i].SSSS;
+		}
+	}
+}
+
+int CJPEG::getChrominDCSSSS(string code)
+{
+	for (int i = 0; i != m_TablechrominDC.size(); ++i)
+	{
+		if (m_TablechrominDC[i].code == code)
+		{
+			return m_TablechrominDC[i].SSSS;
 		}
 	}
 }
