@@ -203,7 +203,7 @@ bool CJPEG::loadCodeTable()
 }
 
 
-vector<CJPEG::symbol> CJPEG::getLuminSymbolSequence(double * pZigZag, int nBlockSize, int preDC)
+vector<CJPEG::symbol> CJPEG::getSymbolSequence(double * pZigZag, int nBlockSize, int preDC)
 {
 	vector<symbol> symbols;
 	symbol s;
@@ -255,8 +255,6 @@ vector<CJPEG::symbol> CJPEG::getLuminSymbolSequence(double * pZigZag, int nBlock
 			{
 				s.SSSS = (int)floor(log2(abs(pZigZag[i]))) + 1;
 			}
-
-
 
 			s.zLen = zLen;
 			s.value = pZigZag[i];
@@ -467,12 +465,12 @@ void CJPEG::decodeLuminByCodes(vector<string> &codes, double *pBlockData, int nB
 			continue;
 		}
 
-		//否则就是正常的，带有一个value的编码
-		if (ZRLcomplementary!=0) //如果前面出现了zrl补偿的
-		{
-			s.zLen += ZRLcomplementary;
-			ZRLcomplementary = 0;
-		}
+		////否则就是正常的，带有一个value的编码
+		//if (ZRLcomplementary!=0) //如果前面出现了zrl补偿的
+		//{
+		//	s.zLen += ZRLcomplementary;
+		//	ZRLcomplementary = 0;
+		//}
 		s.value = getNumByBinaryCode(codes[++i]); //让index+1
 		symbols.push_back(s);
 	}
@@ -496,6 +494,7 @@ void CJPEG::decodeLuminByCodes(vector<string> &codes, double *pBlockData, int nB
 			else //ZRL
 			{
 				index += 16;
+				continue;
 			}
 		}
 		index+=(symbols[i].zLen+1);
@@ -504,7 +503,8 @@ void CJPEG::decodeLuminByCodes(vector<string> &codes, double *pBlockData, int nB
 	//现在pBlockUnZZ就是恢复得到的Zig-Zag后的数据，再进行逆Zig-Zag即可
 
 	IZigZag(pBlockUnZZ, pBlockData, nBlockSize);
-
+	delete[] pBlockUnZZ;
+	pBlockUnZZ = nullptr;
 	return;
 }
 
@@ -567,12 +567,13 @@ void CJPEG::decodeChrominByCodes(vector<string> &codes, double *pBlockData, int 
 			continue;
 		}
 
-		//否则就是正常的，带有一个value的编码
-		if (ZRLcomplementary != 0) //如果前面出现了zrl补偿的
-		{
-			s.zLen += ZRLcomplementary;
-			ZRLcomplementary = 0;
-		}
+		//否则就是正常的，带有一个value的编码 //不需要这个记录
+		//if (ZRLcomplementary != 0) //如果前面出现了zrl补偿的
+		//{
+		//	s.zLen += ZRLcomplementary;
+		//	ZRLcomplementary = 0;
+		//}
+
 		s.value = getNumByBinaryCode(codes[++i]); //让index+1
 		symbols.push_back(s);
 	}
@@ -596,6 +597,7 @@ void CJPEG::decodeChrominByCodes(vector<string> &codes, double *pBlockData, int 
 			else //ZRL
 			{
 				index += 16;
+				continue;
 			}
 		}
 		index += (symbols[i].zLen + 1);
@@ -604,6 +606,9 @@ void CJPEG::decodeChrominByCodes(vector<string> &codes, double *pBlockData, int 
 	//现在pBlockUnZZ就是恢复得到的Zig-Zag后的数据，再进行逆Zig-Zag即可
 
 	IZigZag(pBlockUnZZ, pBlockData, nBlockSize);
+
+	delete[] pBlockUnZZ;
+	pBlockUnZZ = nullptr;
 
 	return;
 }

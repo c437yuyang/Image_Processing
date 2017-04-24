@@ -6032,10 +6032,10 @@ void CImage_ProcessingView::Ontest1()
 		-1,-1,1,0,0,0,0,0,
 		1,1,0,0,0,0,0,0,
 		0,0,0,0,0,0,0,0,
+		0,0,0,0,10,0,0,0,
 		0,0,0,0,0,0,0,0,
 		0,0,0,0,0,0,0,0,
-		0,0,0,0,0,0,0,0,
-		0,0,0,0,0,0,0,0
+		0,0,0,0,0,0,0,20
 	};
 
 	//double pBlockData1[64] = {
@@ -6049,16 +6049,41 @@ void CImage_ProcessingView::Ontest1()
 	//	0,0,0,0,0,0,0,0
 	//};
 
+	double pBlockData1[64] = {
+		26,-25,-1,0,0,0,0,0,
+		-1,-1,21,0,0,11,0,0,
+		1,1,0,0,0,0,0,0,
+		0,0,0,0,0,0,0,0,
+		0,0,0,0,10,0,0,0,
+		0,0,0,0,0,0,0,0,
+		0,0,0,0,0,0,0,0,
+		0,0,0,0,0,0,0,20
+	};
+
 	CJPEG jpeg;
 	double pZigZag[64];
+	double pZigZag1[64];
+
 	jpeg.ZigZag(pBlockData, pZigZag, 8);
+	jpeg.ZigZag(pBlockData1, pZigZag1, 8);
 	//jpeg.IZigZag(pZigZag, pBlockData, 8);
-	auto symbols = jpeg.getLuminSymbolSequence(pZigZag, nBlockSize, 0);
+	auto symbols = jpeg.getSymbolSequence(pZigZag, nBlockSize, 10);
+	auto symbols1 = jpeg.getSymbolSequence(pZigZag1, nBlockSize, pZigZag[0]);
 	vector<string> codes = jpeg.getLuminCodesBySymbolSequence(symbols);
+	vector<string> codes1 = jpeg.getLuminCodesBySymbolSequence(symbols1);
 	double pDecodeDCTData[64];
-	jpeg.decodeLuminByCodes(codes, pDecodeDCTData, 8, 0);
+	double pDecodeDCTData1[64];
+	jpeg.decodeLuminByCodes(codes, pDecodeDCTData, 8, 10);
+	jpeg.decodeLuminByCodes(codes1, pDecodeDCTData1, 8, pDecodeDCTData[0]);
 
-
+	//CJPEG jpeg;
+	//double pZigZag[64];
+	//jpeg.ZigZag(pBlockData, pZigZag, 8);
+	////jpeg.IZigZag(pZigZag, pBlockData, 8);
+	//auto symbols = jpeg.getSymbolSequence(pZigZag, nBlockSize, 0);
+	//vector<string> codes = jpeg.getChrominCodesBySymbolSequence(symbols);
+	//double pDecodeDCTData[64];
+	//jpeg.decodeChrominByCodes(codes, pDecodeDCTData, 8, 0);
 
 	//int i = 126;
 	//string s = jpeg.getBinaryCode(i);
@@ -8817,7 +8842,7 @@ void CImage_ProcessingView::OnEncodeJpeg()
 	}
 
 
-	//2.进行编码，得到码字(因为没找到色差的ac系数表，所以编码就还是用的亮度的表来做的)
+	//2.进行编码，得到码字
 	vector<vector<string>> vecCodesY, vecCodesU, vecCodesV; //vec的每一个元素一个块
 	int preDCY = 0, preDCU = 0, preDCV = 0; //前一个直流系数
 	for (int i = 0; i != nYBlockNum; ++i)
@@ -8827,9 +8852,9 @@ void CImage_ProcessingView::OnEncodeJpeg()
 			double *pZigZagY = vecZigZagY[i*nXBlockNum + j];
 			double *pZigZagU = vecZigZagU[i*nXBlockNum + j];
 			double *pZigZagV = vecZigZagV[i*nXBlockNum + j];
-			vecCodesY.push_back(jpeg.getLuminCodesBySymbolSequence(jpeg.getLuminSymbolSequence(pZigZagY, nBlockSize, preDCY)));
-			vecCodesU.push_back(jpeg.getChrominCodesBySymbolSequence(jpeg.getLuminSymbolSequence(pZigZagU, nBlockSize, preDCU)));
-			vecCodesV.push_back(jpeg.getChrominCodesBySymbolSequence(jpeg.getLuminSymbolSequence(pZigZagV, nBlockSize, preDCV)));
+			vecCodesY.push_back(jpeg.getLuminCodesBySymbolSequence(jpeg.getSymbolSequence(pZigZagY, nBlockSize, preDCY)));
+			vecCodesU.push_back(jpeg.getChrominCodesBySymbolSequence(jpeg.getSymbolSequence(pZigZagU, nBlockSize, preDCU)));
+			vecCodesV.push_back(jpeg.getChrominCodesBySymbolSequence(jpeg.getSymbolSequence(pZigZagV, nBlockSize, preDCV)));
 			preDCY = pZigZagY[0]; //前一个直流系数等于当前块直流系数
 			preDCU = pZigZagU[0];
 			preDCV = pZigZagV[0];
@@ -8842,8 +8867,7 @@ void CImage_ProcessingView::OnEncodeJpeg()
 
 	vector<double*> vecDCTBlocksRecY, vecDCTBlocksRecU, vecDCTBlocksRecV;
 
-	bool bIsFirst=true;
-	preDCY = 0, preDCU = 0, preDCV = 0;
+	bool bIsFirst=true; //第一个块的preDC为0
 	for (int i = 0; i != nYBlockNum; ++i)
 	{
 		for (int j = 0; j != nXBlockNum; ++j)
@@ -8861,10 +8885,15 @@ void CImage_ProcessingView::OnEncodeJpeg()
 			jpeg.decodeLuminByCodes(codesY, pDCTDataY, nBlockSize, bIsFirst ? 0 : vecDCTBlocksY[index - 1][0]);
 			jpeg.decodeChrominByCodes(codesU, pDCTDataU, nBlockSize, bIsFirst ? 0 : vecDCTBlocksU[index - 1][0]);
 			jpeg.decodeChrominByCodes(codesV, pDCTDataV, nBlockSize, bIsFirst ? 0 : vecDCTBlocksV[index - 1][0]);
-
 			vecDCTBlocksRecY.push_back(pDCTDataY);
 			vecDCTBlocksRecU.push_back(pDCTDataU);
 			vecDCTBlocksRecV.push_back(pDCTDataV);
+
+			jpeg.decodeLuminByCodes(codesY, vecDCTBlocksY[index], nBlockSize, bIsFirst ? 0 : vecDCTBlocksY[index - 1][0]);
+			jpeg.decodeChrominByCodes(codesU, vecDCTBlocksU[index], nBlockSize, bIsFirst ? 0 : vecDCTBlocksU[index - 1][0]);
+			jpeg.decodeChrominByCodes(codesV, vecDCTBlocksV[index], nBlockSize, bIsFirst ? 0 : vecDCTBlocksV[index - 1][0]);
+
+
 			bIsFirst = false;
 			//cout << i*nXBlockNum + j << endl;
 		}
@@ -8929,6 +8958,7 @@ void CImage_ProcessingView::OnEncodeJpeg()
 				{
 					ct.YCbCr2RGB(pIDCTBlockY[y*nBlockSize + x] + 128.0, pIDCTBlockU[y*nBlockSize + x] + 128.0, pIDCTBlockV[y*nBlockSize + x] + 128.0
 						, R, G, B);
+					cout << R << "," << G << "," << B << endl;
 					imgJpeg.m_pBits[2][i1][j1] = (BYTE)SaturateCast(R, 0.0, 255.0); //因为数据进行了量化，所以可能会出现溢出的现象，需要处理一下
 					imgJpeg.m_pBits[1][i1][j1] = (BYTE)SaturateCast(G, 0.0, 255.0);
 					imgJpeg.m_pBits[0][i1][j1] = (BYTE)SaturateCast(B, 0.0, 255.0);
