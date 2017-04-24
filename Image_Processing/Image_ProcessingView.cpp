@@ -6038,9 +6038,21 @@ void CImage_ProcessingView::Ontest1()
 		0,0,0,0,0,0,0,0
 	};
 
+	//double pBlockData1[64] = {
+	//	6,-1,1,0,0,0,0,0,
+	//	-5,-1,1,0,0,0,0,0,
+	//	-1,1,0,0,0,0,0,0,
+	//	0,0,0,0,0,0,0,0,
+	//	0,0,0,0,0,0,0,0,
+	//	0,0,0,0,0,0,0,0,
+	//	0,0,0,0,0,0,0,0,
+	//	0,0,0,0,0,0,0,0
+	//};
+
 	CJPEG jpeg;
 	double pZigZag[64];
 	jpeg.ZigZag(pBlockData, pZigZag, 8);
+	//jpeg.IZigZag(pZigZag, pBlockData, 8);
 	auto symbols = jpeg.getLuminSymbolSequence(pZigZag, nBlockSize, 0);
 	vector<string> codes = jpeg.getLuminCodesBySymbolSequence(symbols);
 	double pDecodeDCTData[64];
@@ -8818,7 +8830,7 @@ void CImage_ProcessingView::OnEncodeJpeg()
 			vecCodesY.push_back(jpeg.getLuminCodesBySymbolSequence(jpeg.getLuminSymbolSequence(pZigZagY, nBlockSize, preDCY)));
 			vecCodesU.push_back(jpeg.getChrominCodesBySymbolSequence(jpeg.getLuminSymbolSequence(pZigZagU, nBlockSize, preDCU)));
 			vecCodesV.push_back(jpeg.getChrominCodesBySymbolSequence(jpeg.getLuminSymbolSequence(pZigZagV, nBlockSize, preDCV)));
-			preDCY = pZigZagY[0];
+			preDCY = pZigZagY[0]; //前一个直流系数等于当前块直流系数
 			preDCU = pZigZagU[0];
 			preDCV = pZigZagV[0];
 			//cout << i*nXBlockNum + j << endl;
@@ -8826,7 +8838,7 @@ void CImage_ProcessingView::OnEncodeJpeg()
 	}
 
 
-	//对编码数据进行解码，得到DCT变换的系数
+	//对编码数据(symbol)进行解码，得到DCT变换的系数
 
 
 

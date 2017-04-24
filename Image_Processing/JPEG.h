@@ -36,6 +36,7 @@ public:
 	CJPEG();
 	~CJPEG();
 	void ZigZag(double *pBlockData, double *pZigZag, int nBlockSize);
+	void IZigZag(double * pBlockData, double * pZigZag, int nBlockSize);
 	vector<symbol> getLuminSymbolSequence(double *pZigZag, int nBlockSize, int preDC);
 	vector<string> getLuminCodesBySymbolSequence(vector<symbol> &symbols);
 	string searchForLuminCode(int zlen, int SSSS);

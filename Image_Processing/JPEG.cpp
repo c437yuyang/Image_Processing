@@ -19,6 +19,18 @@ void CJPEG::ZigZag(double * pBlockData, double * pZigZag, int nBlockSize)
 
 	int squa = N * N;
 	int s = 0;
+
+	double *A_T = new double[nBlockSize*nBlockSize]();
+	//求A'
+	for (int i = 0; i != nBlockSize; ++i)
+	{
+		for (int j = 0; j != nBlockSize; ++j)
+		{
+			A_T[i*nBlockSize + j] = pBlockData[j*nBlockSize + i];
+		}
+	}
+
+
 	//求对应位置上应填写的值
 	for (int i = 0; i < N; i++)
 	{
@@ -30,18 +42,66 @@ void CJPEG::ZigZag(double * pBlockData, double * pZigZag, int nBlockSize)
 			{
 				s = i + j;//为了看的更清楚，这里加了这条与下面对称的语句    
 				index = s * (s + 1) / 2 + ((0 == (i + j) % 2) ? i : j);
-				pZigZag[index] = pBlockData[i*N + j];
+				pZigZag[index] = A_T[i*N + j];
 			}
 			else//下三角
 			{
 				s = (N - 1 - i) + (N - 1 - j);
 				index = squa - s * (s + 1) / 2 - (N - ((0 == (i + j) % 2) ? i : j));
-				pZigZag[index] = pBlockData[i*N + j];
+				pZigZag[index] = A_T[i*N + j];
+			}
+		}
+	}
+	delete[]A_T;
+	A_T = nullptr;
+}
+
+//逆Zig-Zag
+void CJPEG::IZigZag(double * pZigZag, double * pBlockData, int nBlockSize)
+{
+	int index = 0;
+	int N = nBlockSize;
+
+	int squa = N * N;
+	int s = 0;
+
+	double *A_T = new double[nBlockSize*nBlockSize]();
+
+	//求对应位置上应填写的值
+	for (int i = 0; i < N; i++)
+	{
+		for (int j = 0; j < N; j++)
+		{
+			s = i + j;
+
+			if (s < N)//上三角
+			{
+				s = i + j;//为了看的更清楚，这里加了这条与下面对称的语句    
+				index = s * (s + 1) / 2 + ((0 == (i + j) % 2) ? i : j);
+				A_T[i*N + j] = pZigZag[index];
+			}
+			else//下三角
+			{
+				s = (N - 1 - i) + (N - 1 - j);
+				index = squa - s * (s + 1) / 2 - (N - ((0 == (i + j) % 2) ? i : j));
+				A_T[i*N + j] = pZigZag[index];
 			}
 		}
 	}
 
+	//求A'
+	for (int i = 0; i != nBlockSize; ++i)
+	{
+		for (int j = 0; j != nBlockSize; ++j)
+		{
+			pBlockData[i*nBlockSize + j] = A_T[j*nBlockSize + i];
+		}
+	}
+
+	delete[]A_T;
+	A_T = nullptr;
 }
+
 
 bool CJPEG::loadCodeTable()
 {
@@ -418,12 +478,32 @@ void CJPEG::decodeLuminByCodes(vector<string> &codes, double *pBlockData, int nB
 	}
 
 	//现在得到了symbols，再根据symbols恢复block
+	double *pBlockUnZZ = new double[nBlockSize*nBlockSize]();
 	//首先是直流系数
-	pBlockData[0] = symbols[0].value + preDC;
+	pBlockUnZZ[0] = symbols[0].value + preDC;
 	//然后按照zigzag恢复交流系数
 	memset(pBlockData, 0.0, nBlockSize*nBlockSize); //先全部置0
-	//
+	//先全部恢复，再逆ZigZag
+	int index = 0;
+	for (int i=1;i!=symbols.size();++i)
+	{
+		if (symbols[i].value==-INT_MAX) //EOB和ZRL
+		{
+			if (symbols[i].zLen==0 && symbols[i].SSSS==0) //EOB
+			{
+				break;
+			}
+			else //ZRL
+			{
+				index += 16;
+			}
+		}
+		index+=(symbols[i].zLen+1);
+		pBlockUnZZ[index] = symbols[i].value;
+	}
+	//现在pBlockUnZZ就是恢复得到的Zig-Zag后的数据，再进行逆Zig-Zag即可
 
+	IZigZag(pBlockUnZZ, pBlockData, nBlockSize);
 
 	return;
 }
